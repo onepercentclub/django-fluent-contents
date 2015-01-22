@@ -1,13 +1,17 @@
-from future.builtins import int
 from django.contrib.admin.widgets import AdminTextareaWidget
 from django.forms.widgets import Widget
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from django.forms.widgets import flatatt
 from django.utils.html import escape
+from django.utils import six
 from fluent_contents.models import Placeholder, get_parent_language_code
 from fluent_contents.models.managers import get_parent_active_language_choices
 from fluent_utils.django_compat import smart_text
+
+
+if six.PY3:
+    long = int
 
 
 class PlaceholderFieldWidget(Widget):
