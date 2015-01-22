@@ -9,9 +9,8 @@ from fluent_contents.models import Placeholder, get_parent_language_code
 from fluent_contents.models.managers import get_parent_active_language_choices
 from fluent_utils.django_compat import smart_text
 
-
 if six.PY3:
-    long = int
+    from future.builtins import int
 
 
 class PlaceholderFieldWidget(Widget):
