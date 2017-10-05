@@ -3,6 +3,8 @@ from django.contrib.contenttypes.admin import (
     GenericInlineModelAdmin,
 )
 
+from nested_inline.admin import NestedStackedInline, NestedModelAdmin
+
 from fluent_contents import appsettings, extensions
 from fluent_contents.forms import ContentItemForm
 from fluent_contents.models import Placeholder, get_parent_language_code
@@ -87,7 +89,7 @@ class BaseContentItemFormSet(BaseGenericInlineFormSet):
         return self.model.__name__
 
 
-class BaseContentItemInline(GenericInlineModelAdmin):
+class BaseContentItemInline(NestedStackedInline, GenericInlineModelAdmin):
     """
     The ``InlineModelAdmin`` class used for all content items.
     """
@@ -102,6 +104,7 @@ class BaseContentItemInline(GenericInlineModelAdmin):
     ordering = ("sort_order",)
     template = "admin/fluent_contents/contentitem/inline_container.html"
     is_fluent_editor_inline = True  # Allow admin templates to filter the inlines
+    inlines = []
 
     # overwritten by subtype
     name = None
@@ -177,6 +180,7 @@ def get_content_item_inlines(plugins=None, base=BaseContentItemInline):
         "raw_id_fields",
         "filter_vertical",
         "filter_horizontal",
+        "inlines",
         "radio_fields",
         "prepopulated_fields",
         "formfield_overrides",

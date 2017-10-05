@@ -1,4 +1,6 @@
-{% load i18n %}
+{% load i18n admin_static %}
+    {% with recursive_formset=inline_admin_formset stacked_template='admin/edit_inline/stacked-nested.html' tabular_template='admin/edit_inline/tabular-nested.html'%}
+
   <div id="{{ inline_admin_formset.formset.prefix }}-group" class="inline-group inline-contentitem-group inline-{{ inline_admin_formset.formset.type_name }}-group" data-inline-model="{{ inline_admin_formset.formset.type_name }}">
     {{ inline_admin_formset.formset.management_form }}
     {{ inline_admin_formset.formset.non_form_errors }}
@@ -7,9 +9,10 @@
       {% include inline_admin_formset.opts.cp_admin_init_template %}
     {% endif %}
 
+
     {# looping in `inline_admin_formset.formset.forms` excludes empty form #}
     {# looping in `inline_admin_formset` includes the empty placeholder as last item #}
-    {% for inline_admin_form in inline_admin_formset %}
+    {% for inline_admin_form in recursive_formset %}
       <div class="inline-related inline-{{ inline_admin_form.model_admin.type_name }}{% if forloop.last %} empty-form last-related{% endif %}" id="{{ inline_admin_formset.formset.prefix }}-{% if not forloop.last %}{{ forloop.counter0 }}{% else %}empty{% endif %}">
         <h2 class="cp-formset-item-title cp-clearfix">
           <span class="title">{{ inline_admin_formset.opts.name }}</span>
@@ -35,8 +38,23 @@
             {% with inline_admin_form.form as form %}
               {% include inline_admin_formset.opts.cp_admin_form_template %}
             {% endwith %}
+              {% if inline_admin_form.form.nested_formsets %}
+                {% for inline_admin_formset in inline_admin_form.form.nested_formsets %}
+                  {% if inline_admin_formset.opts.template == stacked_template %}
+                    {% include stacked_template with prev_prefix=recursive_formset.formset.prefix loopCounter=forloop.parentloop.counter0 %}
+                  {% else %}
+                    {% include tabular_template with prev_prefix=recursive_formset.formset.prefix loopCounter=forloop.parentloop.counter0 %}
+                  {% endif %}
+                  <div class="nested-inline-bottom-border"></div>
+                {% endfor %}
+              {% endif %}
+
           {% endblock %}
         </div>
       </div>
     {% endfor %}
-  </div>
+
+
+{% endwith %}
+
+</div>

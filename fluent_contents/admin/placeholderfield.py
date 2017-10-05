@@ -1,5 +1,7 @@
 from functools import partial
 
+from nested_inline.admin import NestedModelAdmin
+
 from django.forms import Media
 
 from fluent_contents import extensions
@@ -26,8 +28,9 @@ class PlaceholderFieldInline(PlaceholderEditorInline):
             js=[f for f in media._js if not f.endswith("cp_tabs.js")], css=media._css
         )
 
+    inlines = []
 
-class PlaceholderFieldAdmin(PlaceholderEditorAdmin):
+class PlaceholderFieldAdmin(PlaceholderEditorAdmin, NestedModelAdmin):
     """
     The base functionality for :class:`~django.contrib.admin.ModelAdmin` dialogs to display placeholder fields.
 
