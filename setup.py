@@ -46,6 +46,7 @@ setup(
         'django-template-analyzer>=1.6.1', # Needed for Django 1.9 compatibility + bugfixes
         'future>=0.12.2',
         'six>=1.5.2',
+        'django-nested-inline>=0.3.7',
         # Work around https://github.com/html5lib/html5lib-python/issues/189
         'html5lib >= 0.999, != 0.9999, != 1.0b5, != 0.99999, != 1.0b6',
     ],

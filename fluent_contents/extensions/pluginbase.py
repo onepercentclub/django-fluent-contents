@@ -180,6 +180,9 @@ class ContentPlugin(with_metaclass(PluginMediaDefiningClass, object)):
     #: The template to render the frontend HTML output.
     render_template = None
 
+    #: The nested inlines for the admin view.
+    inlines = []
+
     #: By default, rendered output is cached, and updated on admin changes.
     cache_output = True
 
