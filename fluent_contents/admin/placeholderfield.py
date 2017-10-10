@@ -13,7 +13,7 @@ class PlaceholderFieldInline(PlaceholderEditorInline):
     The inline used to process placeholder fields.
     """
     template = "admin/fluent_contents/placeholderfield/inline_init.html"
-
+    inline = []
 
 class PlaceholderFieldAdmin(PlaceholderEditorAdmin, NestedModelAdmin):
     """
