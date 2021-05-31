@@ -3,7 +3,7 @@ Internal utils for search.
 """
 from django.utils.encoding import force_text
 from django.utils.html import strip_tags
-import six
+from future.utils import string_types
 
 
 def get_search_field_values(contentitem):
@@ -17,7 +17,7 @@ def get_search_field_values(contentitem):
 
         # Just assume all strings may contain HTML.
         # Not checking for just the PluginHtmlField here.
-        if value and isinstance(value, six.string_types):
+        if value and isinstance(value, string_types):
             value = get_cleaned_string(value)
 
         values.append(value)
@@ -44,5 +44,5 @@ def clean_join(separator, iterable):
     return separator.join(filter(None, iterable))
 
 
-#def get_cleaned_bits(data):
+# def get_cleaned_bits(data):
 #    return smart_split(get_cleaned_bits(data))

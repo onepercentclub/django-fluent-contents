@@ -1,6 +1,83 @@
 Changelog
 =========
 
+Changes in 2.0.7 (2020-01-04)
+-----------------------------
+
+* Fix Django 3.0 compatibility by removing ``curry()`` call.
+* Bump setup requirements to ensure Django 3.0 compatibility.
+
+
+Changes in 2.0.6 (2019-06-11)
+-----------------------------
+
+* Fix Django 2.x compatibility with ``disquswidgets`` and ``formdesignerlink`` migrations.
+* Fix Python error when adding a ``ContentItem`` on a parent model that doesn't have a ``parent_site`` field.
+* Replace *django-form-designer* GitHub dependency with updated django-form-designer-ai_ PyPI release.
+* Reformat all files with isort, black and prettier.
+
+
+Changes in 2.0.5 (2019-04-12)
+-----------------------------
+
+* Fixed compatibility with Django 2.2
+
+
+Changes in 2.0.4 (2018-08-27)
+-----------------------------
+
+* Fixed showing languages in the copy button which are not part of ``PARLER_LANGUAGES``.
+* Fixed storing ``MarkupItem`` under it's proxy class type ID.
+* Fixed missing return value from ``CachedModelMixin.delete()``.
+* Fixed reading ``context.request`` for content plugin templates.
+* Fixed including ``cp_tabs.js`` in ``PlaceholderFieldAdmin``.
+* Fixed HTML comment output escaping for missing database tables.
+* Fixed errors in ``get_plugins_by_name()`` when object instances are passed.
+* Fixed ``Placeholder.DoesNotExist`` warning to display proper ContentType ID for proxy models.
+* Fixed leaving empty ``.form-row`` elements in the admin page.
+* Fixed ``start_content_plugin`` command, template was missing in ``MANIFEST``.
+* Fixed Python 3 support for ``Placeholder.__repr__()``.
+
+
+Changes in 2.0.3 (2018-05-14)
+-----------------------------
+
+* Fixed twitter-text extra requires dependency for Python 3 support
+  Use ``twitter-text`` instead of the outdated ``twitter-text-py``.
+
+
+Changes in 2.0.2 (2018-02-12)
+-----------------------------
+
+* Fixed JavaScript media file ordering for Django 2.0
+
+
+Changes in 2.0.1 (2018-02-05)
+-----------------------------
+
+* Added ``Meta.manager_inheritance_from_future = True`` to all ``ContentItem`` subclasses that
+  define a ``Meta`` class. This avoids warnings in the latest django-polymorphic_ 2.0.1 release.
+  It also makes sure all sub-sub classes are correctly fetched (an unlikely use-case though).
+* Fixed deprecation warnings for Django 2.1
+* Fixed setup classifiers
+
+
+Changes in 2.0 (2018-01-22)
+---------------------------
+
+* Added Django 2.0 support.
+* Removed compatibility with very old ``django-form-designer`` versions.
+* Dropped Django 1.7, 1.8, 1.9 support.
+
+
+Changes in 1.2.2 (2017-11-22)
+-----------------------------
+
+* Fixed compatibility with upcoming django-polymorphic_ release.
+* Delayed twittertext plugin checks.
+* Removed unneeded ``fluent_utils.django_compat`` imports.
+
+
 Changes in 1.2.1 (2017-08-10)
 -----------------------------
 
@@ -341,7 +418,10 @@ so it's time to show this module to the public.
 
 .. _django-any-urlfield: https://github.com/edoburu/django-any-urlfield
 .. _django-any-imagefield: https://github.com/edoburu/django-any-imagefield
+.. _django-debug-toolbar: https://github.com/jazzband/django-debug-toolbar
 .. _django-flat-theme: https://github.com/elky/django-flat-theme
+.. _django-fluent-comments: https://github.com/django-fluent/django-fluent/comments
+.. _django-form-designer-ai: https://github.com/andersinno/django-form-designer-ai
 .. _django-parler: https://github.com/edoburu/django-parler
 .. _django-polymorphic: https://github.com/django-polymorphic/django-polymorphic
 .. _django-multisite: https://github.com/ecometrica/django-multisite

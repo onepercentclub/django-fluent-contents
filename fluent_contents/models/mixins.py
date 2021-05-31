@@ -5,6 +5,7 @@ class CachedModelMixin(object):
     """
     Mixin to add cache expiration to a model.
     """
+
     clear_cache_on_add = False
 
     def save(self, *args, **kwargs):
@@ -17,12 +18,13 @@ class CachedModelMixin(object):
 
     def delete(self, *args, **kwargs):
         deleted_pk = self.pk
-        super(CachedModelMixin, self).delete(*args, **kwargs)
+        collector_result = super(CachedModelMixin, self).delete(*args, **kwargs)
 
         # Temporary restore to allow get_cache_keys() / plugin.get_output_cache_keys() to read the PK
         self.pk = deleted_pk
         self.clear_cache()
         self.pk = None
+        return collector_result
 
     # Must restore these options, or risk removing with a template print statement.
     delete.alters_data = True

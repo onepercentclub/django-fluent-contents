@@ -13,21 +13,40 @@ Secondly, there are a few possible fields to add to parent models:
 Finally, to exchange template data, a :class:`PlaceholderData` object is available
 which mirrors the relevant fields of the :class:`Placeholder` model.
 """
-from future.builtins import str
-from future.utils import python_2_unicode_compatible
+import django
 from django.core.cache.backends.base import DEFAULT_TIMEOUT
 from django.forms import Media
 from django.utils.html import conditional_escape
-from django.utils.safestring import mark_safe, SafeData
-from fluent_contents.models.db import Placeholder, ContentItem
-from fluent_contents.models.managers import PlaceholderManager, ContentItemManager, get_parent_lookup_kwargs, get_parent_language_code
-from fluent_contents.models.fields import PlaceholderField, PlaceholderRelation, ContentItemRelation
+from django.utils.safestring import SafeData, mark_safe
+from future.builtins import str
+from future.utils import python_2_unicode_compatible
+
+from fluent_contents.models.db import ContentItem, Placeholder
+from fluent_contents.models.fields import (
+    ContentItemRelation,
+    PlaceholderField,
+    PlaceholderRelation,
+)
+from fluent_contents.models.managers import (
+    ContentItemManager,
+    PlaceholderManager,
+    get_parent_language_code,
+    get_parent_lookup_kwargs,
+)
 
 __all__ = (
-    'Placeholder', 'ContentItem',
-    'PlaceholderData', 'ContentItemOutput', 'ImmutableMedia',
-    'PlaceholderManager', 'ContentItemManager', 'get_parent_lookup_kwargs', 'get_parent_language_code',
-    'PlaceholderField', 'PlaceholderRelation', 'ContentItemRelation',
+    "Placeholder",
+    "ContentItem",
+    "PlaceholderData",
+    "ContentItemOutput",
+    "ImmutableMedia",
+    "PlaceholderManager",
+    "ContentItemManager",
+    "get_parent_lookup_kwargs",
+    "get_parent_language_code",
+    "PlaceholderField",
+    "PlaceholderRelation",
+    "ContentItemRelation",
 )
 
 _ALLOWED_ROLES = list(dict(Placeholder.ROLES).keys())
@@ -38,10 +57,11 @@ class PlaceholderData(object):
     A wrapper with data of a placeholder node.
     It shares the :attr:`slot`, :attr:`title` and :attr:`role` fields with the :class:`~fluent_contents.models.Placeholder` class.
     """
+
     ROLE_ALIASES = {
-        'main': Placeholder.MAIN,
-        'sidebar': Placeholder.SIDEBAR,
-        'related': Placeholder.RELATED
+        "main": Placeholder.MAIN,
+        "sidebar": Placeholder.SIDEBAR,
+        "related": Placeholder.RELATED,
     }
 
     def __init__(self, slot, title=None, role=None, fallback_language=None):
@@ -58,7 +78,13 @@ class PlaceholderData(object):
 
         # Ensure upfront value checking
         if self.role not in _ALLOWED_ROLES:
-            raise ValueError("Invalid role '{0}' for placeholder '{1}': allowed are: {2}.".format(self.role, self.title or self.slot, ', '.join(list(self.ROLE_ALIASES.keys()))))
+            raise ValueError(
+                "Invalid role '{0}' for placeholder '{1}': allowed are: {2}.".format(
+                    self.role,
+                    self.title or self.slot,
+                    ", ".join(list(self.ROLE_ALIASES.keys())),
+                )
+            )
 
     def as_dict(self):
         """
@@ -73,19 +99,22 @@ class PlaceholderData(object):
         """
         plugins = self.get_allowed_plugins()
         return {
-            'slot': self.slot,
-            'title': self.title,
-            'role': self.role,
-            'fallback_language': self.fallback_language,
-            'allowed_plugins': [plugin.name for plugin in plugins],
+            "slot": self.slot,
+            "title": self.title,
+            "role": self.role,
+            "fallback_language": self.fallback_language,
+            "allowed_plugins": [plugin.name for plugin in plugins],
         }
 
     def get_allowed_plugins(self):
         from fluent_contents import extensions
+
         return extensions.plugin_pool.get_allowed_plugins(self.slot)
 
     def __repr__(self):
-        return '<{0}: slot={1} role={2} title={3}>'.format(self.__class__.__name__, self.slot, self.role, self.title)
+        return "<{0}: slot={1} role={2} title={3}>".format(
+            self.__class__.__name__, self.slot, self.role, self.title
+        )
 
 
 @python_2_unicode_compatible
@@ -125,7 +154,10 @@ class ContentItemOutput(SafeData):
         return str(self).__getitem__(item)
 
     def __getstate__(self):
-        return (str(self.html), self.media._css, self.media._js)
+        if django.VERSION >= (2, 2):
+            return (str(self.html), self.media._css_lists, self.media._js_lists)
+        else:
+            return (str(self.html), self.media._css, self.media._js)
 
     def __setstate__(self, state):
         # Handle pickling manually, otherwise invokes __getattr__ in a loop.
@@ -138,9 +170,19 @@ class ContentItemOutput(SafeData):
         if not css and not js:
             self.media = ImmutableMedia.empty_instance
         else:
-            self.media = ImmutableMedia()
-            self.media._css = css
-            self.media._js = js
+            if django.VERSION >= (2, 2):
+                if isinstance(css, dict):
+                    # cache from 2.1 version, convert to lists
+                    self.media = Media(css=css, js=js)
+                else:
+                    self.media = Media()
+                    self.media._css_lists = css
+                    self.media._js_lists = js
+            else:
+                # Recover object for Django 2.1 and below
+                self.media = ImmutableMedia()
+                self.media._css = css
+                self.media._js = js
 
     def _insert_media(self, media):
         """
@@ -155,34 +197,57 @@ class ContentItemOutput(SafeData):
 
 
 # Avoid continuous construction of Media objects.
-class ImmutableMedia(Media):
-    #: The empty object (a shared instance of this class)
-    empty_instance = None
+if django.VERSION >= (2, 2):
 
-    def __init__(self, **kwargs):
-        self._css = {}
-        self._js = []
+    class ImmutableMedia(Media):
+        #: The empty object (a shared instance of this class)
+        empty_instance = None
 
-        if kwargs:
-            Media.add_css(self, kwargs.get('css', None))
-            Media.add_js(self, kwargs.get('js', None))
+        def __init__(self, **kwargs):
+            if kwargs:
+                # This wasn't used internally at all, but check if any third party packages did this.
+                raise ValueError(
+                    "Providing css/js to ImmutableMedia is no longer supported on Django 2.2+"
+                )
+            super(ImmutableMedia, self).__init__()
 
-    def add_css(self, data):
-        raise RuntimeError("Immutable media object")
-
-    def add_js(self, data):
-        raise RuntimeError("Immutable media object")
-
-    def __add__(self, other):
-        # Performance improvement
-        if other is ImmutableMedia.empty_instance:
+        def __add__(self, other):
+            # Django 2.2 no longer provides add_js/add_css,
+            # making the Media object behave as immutable.
+            # 'other' could also be ImmutableMedia.empty_instance
             return other
 
-        # Fast copy
-        combined = Media()
-        combined._css = other._css.copy()
-        combined._js = other._js[:]
-        return combined
+
+else:
+
+    class ImmutableMedia(Media):
+        #: The empty object (a shared instance of this class)
+        empty_instance = None
+
+        def __init__(self, **kwargs):
+            self._css = {}
+            self._js = []
+
+            if kwargs:
+                Media.add_css(self, kwargs.get("css", None))
+                Media.add_js(self, kwargs.get("js", None))
+
+        def add_css(self, data):
+            raise RuntimeError("Immutable media object")
+
+        def add_js(self, data):
+            raise RuntimeError("Immutable media object")
+
+        def __add__(self, other):
+            # Performance improvement
+            if other is ImmutableMedia.empty_instance:
+                return other
+
+            # Fast copy for Django 2.1 and below
+            combined = Media()
+            combined._css = other._css.copy()
+            combined._js = other._js[:]
+            return combined
 
 
 ImmutableMedia.empty_instance = ImmutableMedia()

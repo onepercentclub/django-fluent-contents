@@ -3,40 +3,44 @@ Internal - util functions for this 'rendering' package.
 """
 import logging
 import os
-import six
-from django.contrib.auth.models import AnonymousUser
-from django.contrib.sites.models import Site
-from django.test import RequestFactory
-from django.conf import settings
-from django.utils.translation import get_language
-from django.core.cache import cache
-from django.template.loader import select_template
-from fluent_contents.extensions import ContentPlugin
 
-try:
-    from django.template.backends.django import Template as TemplateAdapter
-except ImportError:
-    TemplateAdapter = None
+import django
+from django.conf import settings
+from django.contrib.sites.models import Site
+from django.core.cache import cache
+from django.template.backends.django import Template as TemplateAdapter
+from django.template.loader import select_template
+from django.test import RequestFactory
+from django.utils.translation import get_language
+from future.utils import string_types
+
+from fluent_contents.extensions import ContentPlugin
 
 logger = logging.getLogger(__name__)
 
-_log_functions = {
-    logging.DEBUG: 'debug',
-}
+_log_functions = {logging.DEBUG: "debug"}
 
 
 def add_media(dest, media):
     """
-    Do what django.forms.Media.__add__() does without creating a new object.
+    Optimized version of django.forms.Media.__add__() that doesn't create new objects.
     """
-    dest.add_css(media._css)
-    dest.add_js(media._js)
+    if django.VERSION >= (2, 2):
+        dest._css_lists += media._css_lists
+        dest._js_lists += media._js_lists
+    elif django.VERSION >= (2, 0):
+        combined = dest + media
+        dest._css = combined._css
+        dest._js = combined._js
+    else:
+        dest.add_css(media._css)
+        dest.add_js(media._js)
 
 
 def get_placeholder_debug_name(placeholder):
     # TODO: Cheating here with knowledge of "fluent_contents.plugins.sharedcontent" package:
     #       prevent unclear message in <!-- no items in 'shared_content' placeholder --> debug output.
-    if placeholder.slot == 'shared_content':
+    if placeholder.slot == "shared_content":
         sharedcontent = placeholder.parent
         return "shared_content:{0}".format(sharedcontent.slug)
 
@@ -47,6 +51,7 @@ def get_dummy_request(language=None):
     """
     Returns a Request instance populated with cms specific attributes.
     """
+
     if settings.ALLOWED_HOSTS and settings.ALLOWED_HOSTS != "*":
         host = settings.ALLOWED_HOSTS[0]
     else:
@@ -57,7 +62,12 @@ def get_dummy_request(language=None):
     request.LANGUAGE_CODE = language or settings.LANGUAGE_CODE
     # Needed for plugin rendering.
     request.current_page = None
-    request.user = AnonymousUser()
+
+    if "django.contrib.auth" in settings.INSTALLED_APPS:
+        from django.contrib.auth.models import AnonymousUser
+
+        request.user = AnonymousUser()
+
     return request
 
 
@@ -67,8 +77,9 @@ def get_render_language(contentitem):
     """
     plugin = contentitem.plugin
 
-    if plugin.render_ignore_item_language \
-    or (plugin.cache_output and plugin.cache_output_per_language):
+    if plugin.render_ignore_item_language or (
+        plugin.cache_output and plugin.cache_output_per_language
+    ):
         # Render the template in the current language.
         # The cache also stores the output under the current language code.
         #
@@ -87,32 +98,37 @@ def is_template_updated(request, contentitem, cachekey):
     # so the cached values can be ignored.
 
     plugin = contentitem.plugin
-    if _is_method_overwritten(plugin, ContentPlugin, 'get_render_template'):
+    if _is_method_overwritten(plugin, ContentPlugin, "get_render_template"):
         # oh oh, really need to fetch the real object.
         # Won't be needed that often.
-        contentitem = contentitem.get_real_instance()  # Need to determine get_render_template(), this is only done with DEBUG=True
+        # Need to determine get_render_template(), this is only done with DEBUG=True
+        contentitem = contentitem.get_real_instance()
         template_names = plugin.get_render_template(request, contentitem)
     else:
         template_names = plugin.render_template
 
     if not template_names:
         return False
-    if isinstance(template_names, six.string_types):
+    if isinstance(template_names, string_types):
         template_names = [template_names]
 
     # With TEMPLATE_DEBUG = True, each node tracks it's origin.
     template = select_template(template_names)
-    if TemplateAdapter is not None and isinstance(template, TemplateAdapter):
-        # Django 1.8 template wrapper
+    if isinstance(template, TemplateAdapter):
+        # Django template wrapper
         if template.origin is None:
-            logger.warning('Unable to detect changes in template "%s" for developer cache purge (origin is not set)', template.template.name)
+            logger.warning(
+                'Unable to detect changes in template "%s" for developer cache purge (origin is not set)',
+                template.template.name,
+            )
             return False
 
         template_filename = template.origin.name
     else:
         node0 = template.nodelist[0]
-        attr = 'source' if hasattr(node0, 'source') else 'origin'  # attribute depends on object type
 
+        # The exact attribute depends on object type
+        attr = "source" if hasattr(node0, "source") else "origin"
         try:
             template_filename = getattr(node0, attr)[0].name
         except (AttributeError, IndexError):

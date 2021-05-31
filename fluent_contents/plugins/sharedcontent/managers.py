@@ -1,8 +1,11 @@
 from django.conf import settings
-from django.db.models import Q, Manager
+from django.db.models import Manager, Q
 from parler.managers import TranslatableQuerySet
+
 from fluent_contents import appsettings
-from fluent_contents.plugins.sharedcontent import appsettings as sharedcontent_appsettings
+from fluent_contents.plugins.sharedcontent import (
+    appsettings as sharedcontent_appsettings,
+)
 
 
 class SharedContentQuerySet(TranslatableQuerySet):
@@ -14,8 +17,8 @@ class SharedContentQuerySet(TranslatableQuerySet):
         super(SharedContentQuerySet, self).__init__(*args, **kwargs)
         self._parent_site = None
 
-    def _clone(self, klass=None, setup=False, **kw):
-        c = super(SharedContentQuerySet, self)._clone(klass, setup, **kw)
+    def _clone(self):
+        c = super(SharedContentQuerySet, self)._clone()
         c._parent_site = self._parent_site
         return c
 
@@ -52,4 +55,5 @@ class SharedContentManager(Manager.from_queryset(SharedContentQuerySet)):
     """
     Extra methods attached to ``SharedContent.objects``, see :class:`SharedContentQuerySet`.
     """
+
     pass
