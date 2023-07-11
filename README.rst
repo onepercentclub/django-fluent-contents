@@ -1,13 +1,29 @@
-.. image::  https://travis-ci.org/edoburu/django-fluent-contents.png?branch=master
-  :target: http://travis-ci.org/edoburu/django-fluent-contents
-  :alt: build-status
+*This project has reached the end of its development as CMS framework.*
+*It only receives low maintenance to continue running existing websites.*
+*Feel free to browse the code, but please use other Django-based CMS frameworks such as*
+`Wagtail CMS <https://wagtail.io/>`_ *when you start a new project.*
 
-Introduction
-============
+django-fluent-contents
+======================
+
+.. image:: http://unmaintained.tech/badge.svg
+    :target: http://unmaintained.tech
+    :alt: No Maintenance Intended
+.. image:: https://github.com/django-fluent/django-fluent-contents/actions/workflows/tests.yaml/badge.svg?branch=master
+    :target: https://github.com/django-fluent/django-fluent-contents/actions/workflows/tests.yaml
+.. image:: https://img.shields.io/pypi/v/django-fluent-contents.svg
+    :target: https://pypi.python.org/pypi/django-fluent-contents/
+.. image:: https://img.shields.io/pypi/l/django-fluent-contents.svg
+    :target: https://pypi.python.org/pypi/django-fluent-contents/
+.. image:: https://img.shields.io/codecov/c/github/django-fluent/django-fluent-contents/master.svg
+    :target: https://codecov.io/github/django-fluent/django-fluent-contents?branch=master
+.. image:: https://readthedocs.org/projects/django-fluent-contents/badge/?version=latest
+    :target: https://django-fluent-contents.readthedocs.io/en/latest/
+
 
 The *fluent_contents* module offers a widget engine to display various content on a Django page.
 
-This engine operates similarly like Django CMS, FeinCMS or django-portlets,
+This engine operates similarly like Django CMS, FeinCMS, Wagtail's streaming field or django-portlets,
 however, it can be used for any project, or CMS system.
 
 Page contents can be constructed with multiple "content items".
@@ -27,7 +43,7 @@ By default, the following content items are available:
 
 * Text content - write rich text in a WYSIWYG editor (provided by django-wysiwyg_).
 * Markup - write content with reStructuredText, Markdown or Textile (provided by *docutils*, *Markdown* or *textile*).
-* Forms - display forms created with django-form-designer_.
+* Forms - display forms created with django-form-designer-ai_.
 
 **Online content:**
 
@@ -47,7 +63,7 @@ By default, the following content items are available:
 
 * Commentsarea - display comments on a page (provided by django.contrib.comments_).
 * Disqusarea - display DISQUS comments on a page (provided by django-disqus_).
-* Form-designer link - display a django-form-designer_ form on a page.
+* Form-designer link - display a django-form-designer-ai_ form on a page.
 
 For more details, see the documentation_ at Read The Docs.
 
@@ -57,7 +73,7 @@ Screenshot
 
 The ``PlaceholderField`` is nicely integrated in the Django admin interface:
 
-.. image:: https://github.com/edoburu/django-fluent-contents/raw/master/docs/images/admin/placeholderfieldadmin2.png
+.. image:: https://github.com/django-fluent/django-fluent-contents/raw/master/docs/images/admin/placeholderfieldadmin2.png
    :width: 770px
    :height: 562px
    :alt: django-fluent-contents placeholder field preview
@@ -65,7 +81,7 @@ The ``PlaceholderField`` is nicely integrated in the Django admin interface:
 Secondly, it's possible to build a CMS Page interface with the ``PlaceholderEditorAdmin``,
 which displays each content placeholder in a tab:
 
-.. image:: https://github.com/edoburu/django-fluent-contents/raw/master/docs/images/admin/placeholdereditoradmin1.png
+.. image:: https://github.com/django-fluent/django-fluent-contents/raw/master/docs/images/admin/placeholdereditoradmin1.png
    :width: 770px
    :height: 362px
    :alt: django-fluent-contents placeholder editor preview
@@ -74,27 +90,37 @@ which displays each content placeholder in a tab:
 Installation
 ============
 
-First install the module, preferably in a virtual environment. It can be installed from PyPI::
+First install the module, preferably in a virtual environment. It can be installed from PyPI:
+
+.. code-block:: bash
 
     pip install django-fluent-contents
 
-Or the current folder can be installed::
+Or the current folder can be installed:
+
+.. code-block:: bash
 
     pip install .
 
-The dependencies of plugins are not included by default. To install those, include the plugin names as extra option::
+The dependencies of plugins are not included by default. To install those, include the plugin names as extra option:
+
+.. code-block:: bash
 
     pip install django-fluent-contents[code,disquscommentsarea,formdesignerlink,markup,oembeditem,text,twitterfeed]
 
 Configuration
 -------------
 
-Next, create a project which uses the module::
+Next, create a project which uses the module:
+
+.. code-block:: bash
 
     cd ..
     django-admin.py startproject fluentdemo
 
-It should have the following settings::
+It should have the following settings:
+
+.. code-block:: python
 
     INSTALLED_APPS += (
         'fluent_contents',
@@ -118,15 +144,21 @@ It should have the following settings::
         'form_designer',
     )
 
-The database tables can be created afterwards::
+The database tables can be created afterwards:
 
-    ./manage.py syncdb
+.. code-block:: bash
+
+    ./manage.py migrate
 
 Finally, it needs a model or application that displays the content.
 There are two ways to include content. The most simply way, is
-adding a ``PlaceholderField`` to a model::
+adding a ``PlaceholderField`` to a model:
+
+.. code-block:: python
 
     # models.py:
+    
+    from fluent_contents.models import PlaceholderField
 
     class Article(models.Model):
         title = models.CharField("Title", max_length=200)
@@ -142,6 +174,8 @@ adding a ``PlaceholderField`` to a model::
 
 
     # admin.py:
+    
+    from fluent_contents.admin import PlaceholderFieldAdmin
 
     class ArticleAdmin(PlaceholderFieldAdmin):
         pass
@@ -169,7 +203,9 @@ Take a look in the existing types at ``fluent_contents.plugins`` to see how it's
 
 It boils down to creating a package with 2 files:
 
-The ``models.py`` file should define the fields of the content item::
+The ``models.py`` file should define the fields of the content item:
+
+.. code-block:: python
 
   from django.db import models
   from fluent_contents.models import ContentItem
@@ -187,7 +223,9 @@ The ``models.py`` file should define the fields of the content item::
       def __unicode__(self):
           return self.title
 
-The ``content_plugins.py`` file defines the metadata and rendering::
+The ``content_plugins.py`` file defines the metadata and rendering:
+
+.. code-block:: python
 
   from fluent_contents.extensions import plugin_pool, ContentPlugin
   from .models import AnnouncementBlockItem
@@ -199,7 +237,9 @@ The ``content_plugins.py`` file defines the metadata and rendering::
      category = "Simple blocks"
 
 The plugin can also define the admin layout, by adding fields such as a ``fieldset``, but that is all optional.
-The template could look like::
+The template could look like:
+
+.. code-block:: html+django
 
     <div class="announcement">
         <h3>{{ instance.title }}</h3>
@@ -230,9 +270,9 @@ Pull requests are welcome too. :-)
 
 .. _django.contrib.comments: https://docs.djangoproject.com/en/dev/ref/contrib/comments/
 .. _django-disqus: https://github.com/arthurk/django-disqus
-.. _django-fluent-comments: https://github.com/edoburu/django-fluent-comments
-.. _django-fluent-pages: https://github.com/edoburu/django-fluent-pages
-.. _django-form-designer: https://github.com/philomat/django-form-designer.git
-.. _django-polymorphic: https://github.com/chrisglass/django_polymorphic
+.. _django-fluent-comments: https://github.com/django-fluent/django-fluent-comments
+.. _django-fluent-pages: https://github.com/django-fluent/django-fluent-pages
+.. _django-form-designer-ai: https://github.com/andersinno/django-form-designer-ai
+.. _django-polymorphic: https://github.com/django-polymorphic/django-polymorphic
 .. _django-wysiwyg: https://github.com/pydanny/django-wysiwyg
 

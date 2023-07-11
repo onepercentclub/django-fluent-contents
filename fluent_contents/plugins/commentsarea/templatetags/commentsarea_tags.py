@@ -1,27 +1,35 @@
 """
-A proxy to automatically switch to the ``threadedcomments`` template tags if they are available.
+A proxy to automatically switch to the right comments app that is available.
 """
-from django.contrib.comments.templatetags import comments
-from django import template
-from django.core.exceptions import ImproperlyConfigured
-from django.template.loader import render_to_string
+import warnings
+
+from django.template import Library
+from django.utils.safestring import mark_safe
+from fluent_utils.django_compat import is_installed
+
 from fluent_contents.plugins.commentsarea import appsettings
 
-register = template.Library()
-
-
-if appsettings.FLUENT_COMMENTSAREA_THREADEDCOMMENTS:
-    # Support threadedcomments
-    from threadedcomments.templatetags import threadedcomments_tags  # If this import fails, the module version is too old.
-    register.filters.update(threadedcomments_tags.register.filters)
-    register.tags.update(threadedcomments_tags.register.tags)
-
-    # https://github.com/HonzaKral/django-threadedcomments didn't have a 'render_comment_list' tag for a long time.
-    if 'render_comment_list' not in register.tags:
-        raise ImproperlyConfigured(
-            "The current version of django-threadedcomments is not up-to-date.\n"
-            "Please install django-threadedcomments >= 0.9")
+if is_installed("threadedcomments") and appsettings.FLUENT_COMMENTSAREA_THREADEDCOMMENTS:
+    from threadedcomments.templatetags.threadedcomments_tags import register
+elif is_installed("django.contrib.comments"):
+    from django.contrib.comments.templatetags.comments import register
+elif is_installed("django_comments"):
+    from django_comments.templatetags.comments import register
 else:
-    # Standard comments
-    register.filters.update(comments.register.filters)
-    register.tags.update(comments.register.tags)
+    register = Library()
+
+    @register.simple_tag
+    def render_comment_list(for_, object):
+        warnings.warn(
+            "Can't render comments list: no comment app installed!\n"
+            "Make sure either 'django.contrib.comments' or 'django_comments' is in INSTALLED_APPS"
+        )
+        return mark_safe("<!-- Can't render comments list: no comment plugin installed! -->")
+
+    @register.simple_tag
+    def render_comment_form(for_, object):
+        warnings.warn(
+            "Can't render comments form: no comment app installed!\n"
+            "Make sure either 'django.contrib.comments' or 'django_comments' is in INSTALLED_APPS"
+        )
+        return mark_safe("<!-- no comment plugin installed! -->")

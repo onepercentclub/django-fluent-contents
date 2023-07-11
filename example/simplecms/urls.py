@@ -1,5 +1,5 @@
 from django.conf.urls import *
 
-urlpatterns = patterns('simplecms.views',
-    url(r'^$|^(?P<path>.*/)$', 'page_detail', name='simplecms-page')
-)
+from . import views
+
+urlpatterns = [url(r"^$|^(?P<path>.*/)$", views.page_detail, name="simplecms-page")]

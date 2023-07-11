@@ -1,11 +1,13 @@
-from django.core.management.base import BaseCommand, CommandError
 from pprint import pformat
-from micawber.exceptions import ProviderNotFoundException, ProviderException
+
+from django.core.management.base import BaseCommand, CommandError
+from micawber.exceptions import ProviderException, ProviderNotFoundException
+
 from fluent_contents.plugins.oembeditem.backend import get_oembed_data
 
 
 class Command(BaseCommand):
-    args = '<url>'
+    args = "<url>"
     help = "Display the OEmbed results of an URL"
 
     def handle(self, *args, **options):
@@ -16,12 +18,12 @@ class Command(BaseCommand):
             try:
                 data = get_oembed_data(url)
             except ProviderNotFoundException:
-                self.stderr.write("* No OEmbed provider found for '{0}'!\n".format(url))
+                self.stderr.write(f"* No OEmbed provider found for '{url}'!\n")
             except ProviderException as e:
                 # Real urllib2 exception is sadly hidden by micawber.
-                self.stderr.write("* {0}\n".format(e))
+                self.stderr.write(f"* {e}\n")
             else:
-                self.stdout.write("* OEmbed data for '{0}':\n".format(url))
+                self.stdout.write(f"* OEmbed data for '{url}':\n")
 
                 for key in sorted(data.keys()):
-                    self.stdout.write('  - {0}: {1}\n'.format(key, pformat(data[key])))
+                    self.stdout.write(f"  - {key}: {pformat(data[key])}\n")

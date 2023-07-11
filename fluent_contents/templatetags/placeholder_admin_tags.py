@@ -1,10 +1,11 @@
-from future.builtins import str
 from django.template import Library, Node
 from django.template.base import TemplateSyntaxError
+from tag_parser import parse_as_var, parse_token_kwargs, template_tag
+
 from fluent_contents.admin.contentitems import BaseContentItemInline
-from tag_parser import template_tag, parse_as_var, parse_token_kwargs
 
 register = Library()
+
 
 @register.filter
 def only_content_item_inlines(inlines):
@@ -21,7 +22,7 @@ def has_no_visible_fields(inline_admin_form):
     # fieldset = admin Fieldset object.
 
     for name, options in inline_admin_form.fieldsets:
-        for name_slot in options.get('fields', ()):
+        for name_slot in options.get("fields", ()):
             # Lines can include (field, field)
             if not isinstance(name_slot, (list, tuple)):
                 name_slot = [name_slot]
@@ -44,7 +45,7 @@ def group_plugins_into_categories(plugins):
     categories = {}
 
     for plugin in plugins:
-        title = str(plugin.category or u"")  # enforce resolving ugettext_lazy proxies.
+        title = str(plugin.category or "")  # enforce resolving ugettext_lazy proxies.
         if title not in categories:
             categories[title] = []
         categories[title].append(plugin)
@@ -80,10 +81,10 @@ def plugin_categories_to_choices(categories):
     return choices
 
 
-@template_tag(register, 'getfirstof')
+@template_tag(register, "getfirstof")
 class GetFirstOfNode(Node):
     def __init__(self, filters, var_name):
-        self.filters = filters    # list of FilterExpression nodes.
+        self.filters = filters  # list of FilterExpression nodes.
         self.var_name = var_name
 
     def render(self, context):
@@ -96,7 +97,7 @@ class GetFirstOfNode(Node):
                 break
 
         context[self.var_name] = value
-        return ''
+        return ""
 
     @classmethod
     def parse(cls, parser, token):
@@ -109,6 +110,6 @@ class GetFirstOfNode(Node):
         tag_name, choices, _ = parse_token_kwargs(parser, bits, allowed_kwargs=())
 
         if var_name is None:
-            raise TemplateSyntaxError("Expected syntax: {{% {0} val1 val2 as val %}}".format(tag_name))
+            raise TemplateSyntaxError(f"Expected syntax: {{% {tag_name} val1 val2 as val %}}")
 
         return cls(choices, var_name)

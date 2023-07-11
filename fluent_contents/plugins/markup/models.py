@@ -1,75 +1,76 @@
-import django
-from future.utils import python_2_unicode_compatible
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.text import Truncator
-from django.utils.translation import ugettext_lazy as _
-from polymorphic.manager import PolymorphicManager
+from django.utils.translation import gettext_lazy as _
+
 from fluent_contents.forms import ContentItemForm
-from fluent_contents.models import ContentItem
+from fluent_contents.models import ContentItem, ContentItemManager
 from fluent_contents.plugins.markup import appsettings, backend
 
 LANGUAGE_MODEL_CLASSES = {}
 
-__all__ = [
-    'LANGUAGE_MODEL_CLASSES',
-]
+__all__ = ["LANGUAGE_MODEL_CLASSES"]
 
 
 class MarkupItemForm(ContentItemForm):
     """
     A custom form that validates the markup.
     """
+
     default_language = None
 
     def clean_text(self):
         try:
-            backend.render_text(self.cleaned_data['text'], self.instance.language or self.default_language)
+            backend.render_text(
+                self.cleaned_data["text"],
+                self.instance.language or self.default_language,
+            )
         except Exception as e:
             raise ValidationError("There is an error in the markup: %s" % e)
-        return self.cleaned_data['text']
+        return self.cleaned_data["text"]
 
 
-
-@python_2_unicode_compatible
 class MarkupItem(ContentItem):
     """
     A snippet of markup (restructuredtext, markdown, or textile) to display at a page.
     """
-    text = models.TextField(_('markup'))
+
+    text = models.TextField(_("markup"))
 
     # Store the language to keep rendering intact while switching settings.
-    language = models.CharField(_('Language'), max_length=30, editable=False, db_index=True, choices=backend.LANGUAGE_CHOICES)
+    language = models.CharField(
+        _("Language"),
+        max_length=30,
+        editable=False,
+        db_index=True,
+        choices=backend.LANGUAGE_CHOICES,
+    )
+
+    objects = ContentItemManager()  # Avoid Django 1.10 migrations
 
     class Meta:
-        verbose_name = _('Markup code')
-        verbose_name_plural = _('Markup code')
+        verbose_name = _("Markup code")
+        verbose_name_plural = _("Markup code")
 
     def __str__(self):
         return Truncator(self.text).words(20)
 
     def __init__(self, *args, **kwargs):
-        super(MarkupItem, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
-        # Extra polymorphic!
+        # Extra polymorphic, in case the base class content ID was stored.
         ProxyModelClass = LANGUAGE_MODEL_CLASSES.get(self.language, None)
         if ProxyModelClass:
             self.__class__ = ProxyModelClass
 
 
-
-class MarkupLanguageManager(PolymorphicManager):
+class MarkupLanguageManager(ContentItemManager):
     def __init__(self, fixed_language):
-        super(MarkupLanguageManager, self).__init__()
+        super().__init__()
         self.fixed_language = fixed_language
 
     def get_queryset(self):
-        return super(MarkupLanguageManager, self).get_queryset().filter(language=self.fixed_language)
-
-    if django.VERSION < (1,6):
-        def get_query_set(self):
-            return super(MarkupLanguageManager, self).get_query_set().filter(language=self.fixed_language)
-
+        return super().get_queryset().filter(language=self.fixed_language)
 
 
 def _create_markup_model(fixed_language):
@@ -86,20 +87,23 @@ def _create_markup_model(fixed_language):
 
     class Meta:
         verbose_name = title
-        verbose_name_plural = _('%s items') % title
+        verbose_name_plural = _("%s items") % title
         proxy = True
 
-    classname = "{0}MarkupItem".format(fixed_language.capitalize())
+    classname = f"{fixed_language.capitalize()}MarkupItem"
 
-    new_class = type(classname, (MarkupItem,), {
-        '__module__': MarkupItem.__module__,
-        'objects': objects,
-        'save': save,
-        'Meta': Meta,
-    })
+    new_class = type(
+        str(classname),
+        (MarkupItem,),
+        {
+            "__module__": MarkupItem.__module__,
+            "objects": objects,
+            "save": save,
+            "Meta": Meta,
+        },
+    )
 
     # Make easily browsable
-    LANGUAGE_MODEL_CLASSES[fixed_language] = new_class
     return new_class
 
 
@@ -110,6 +114,6 @@ for language in list(backend.SUPPORTED_LANGUAGES.keys()):
     if language not in appsettings.FLUENT_MARKUP_LANGUAGES:
         continue
 
-    new_class = _create_markup_model(language)
-    #globals()[new_class.__name__] = new_class
-    #__all__.append(new_class.__name__)
+    LANGUAGE_MODEL_CLASSES[language] = _create_markup_model(language)
+    # globals()[new_class.__name__] = new_class
+    # __all__.append(new_class.__name__)

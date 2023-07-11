@@ -56,7 +56,7 @@ The following attributes control the overall appearance of the plugin in the adm
   This optional template is inserted once at the top of the admin interface.
 
 * :attr:`~fluent_contents.extensions.ContentPlugin.form` -
-  The form class to use in the admin form. It should inherit from the :class:`~fluent_contents.forms.ContentItemForm` class.
+  The form class to use in the admin form. It should inherit from the :class:`~fluent_contents.extensions.ContentItemForm` class.
 
 * :attr:`~fluent_contents.extensions.ContentPlugin.fieldsets` -
   A tuple of fieldsets, similar to the :class:`~django.contrib.admin.ModelAdmin` class.
@@ -114,6 +114,8 @@ The following attributes control the overall appearance of form fields in the ad
 * :attr:`~fluent_contents.extensions.ContentPlugin.readonly_fields` -
   A list of fields to display as readonly.
 
+
+.. _custom-model-fields:
 
 Custom model fields
 -------------------

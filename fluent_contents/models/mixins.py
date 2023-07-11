@@ -1,26 +1,33 @@
 from django.core.cache import cache
 
 
-class CachedModelMixin(object):
+class CachedModelMixin:
     """
     Mixin to add cache expiration to a model.
     """
+
+    clear_cache_on_add = False
+
     def save(self, *args, **kwargs):
         is_new = not self.pk or self._state.adding
-        super(CachedModelMixin, self).save(*args, **kwargs)
-        if not is_new:
+        super().save(*args, **kwargs)
+        if not is_new or self.clear_cache_on_add:
             self.clear_cache()
 
     save.alters_data = True
 
-
     def delete(self, *args, **kwargs):
-        super(CachedModelMixin, self).delete(*args, **kwargs)
+        deleted_pk = self.pk
+        collector_result = super().delete(*args, **kwargs)
+
+        # Temporary restore to allow get_cache_keys() / plugin.get_output_cache_keys() to read the PK
+        self.pk = deleted_pk
         self.clear_cache()
+        self.pk = None
+        return collector_result
 
     # Must restore these options, or risk removing with a template print statement.
     delete.alters_data = True
-
 
     def clear_cache(self):
         """
@@ -29,7 +36,6 @@ class CachedModelMixin(object):
         cache.delete_many(self.get_cache_keys())
 
     clear_cache.alters_data = True
-
 
     def get_cache_keys(self):
         """

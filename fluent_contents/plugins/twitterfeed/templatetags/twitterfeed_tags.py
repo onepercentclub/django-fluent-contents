@@ -1,6 +1,10 @@
 from django.template import Library
 from django.utils.safestring import mark_safe
-from twitter_text import TwitterText
+
+try:
+    from twitter_text import TwitterText
+except ImportError:
+    raise ImportError("The 'twitter-text' package is required to use the 'twitterfeed' plugin.")
 
 register = Library()
 
@@ -12,5 +16,5 @@ def urlize_twitter(text):
     """
     tt = TwitterText(text)
     html = tt.autolink.auto_link()
-    html = html.replace('twitter.com/search?q=', 'twitter.com/search/realtime/')
+    html = html.replace("twitter.com/search?q=", "twitter.com/search/realtime/")
     return mark_safe(html)

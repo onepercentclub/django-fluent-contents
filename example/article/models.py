@@ -1,8 +1,12 @@
-from future.utils import python_2_unicode_compatible
-from django.core.urlresolvers import reverse
 from django.db import models
-from fluent_contents.models.fields import PlaceholderField, PlaceholderRelation, ContentItemRelation
-from fluent_contents.models import ContentItem
+from django.urls import reverse
+
+from fluent_contents.models import ContentItem, ContentItemManager
+from fluent_contents.models.fields import (
+    ContentItemRelation,
+    PlaceholderField,
+    PlaceholderRelation,
+)
 
 
 class Article(models.Model):
@@ -17,19 +21,21 @@ class Article(models.Model):
         verbose_name = "Article"
         verbose_name_plural = "Articles"
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
     def get_absolute_url(self):
-        return reverse('article-details', kwargs={'slug': self.slug})
+        return reverse("article-details", kwargs={"slug": self.slug})
 
 
-@python_2_unicode_compatible
 class ArticleTextItem(ContentItem):
     """
     This model can be placed on every placeholder field / page.
     """
+
     text = models.TextField("Text")
+
+    objects = ContentItemManager()  # Avoid Django 1.10 migrations
 
     class Meta:
         verbose_name = "Article text item"

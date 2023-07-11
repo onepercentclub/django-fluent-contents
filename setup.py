@@ -1,31 +1,29 @@
 #!/usr/bin/env python
-from setuptools import setup, find_packages
-from os import path
 import codecs
 import os
 import re
 import sys
+from os import path
 
+from setuptools import find_packages, setup
 
 # When creating the sdist, make sure the django.mo file also exists:
-if 'sdist' in sys.argv or 'develop' in sys.argv:
+if "sdist" in sys.argv or "develop" in sys.argv:
+    os.chdir("fluent_contents")
     try:
-        os.chdir('fluent_contents')
+        from django.core import management
 
-        from django.core.management.commands.compilemessages import Command
-        command = Command()
-        command.execute(stdout=sys.stderr, verbosity=1)
+        management.call_command("compilemessages", stdout=sys.stderr, verbosity=1)
     except ImportError:
-        # < Django 1.7
-        from django.core.management.commands.compilemessages import compile_messages
-        compile_messages(sys.stderr)
+        if "sdist" in sys.argv:
+            raise
     finally:
-        os.chdir('..')
+        os.chdir("..")
 
 
 def read(*parts):
     file_path = path.join(path.dirname(__file__), *parts)
-    return codecs.open(file_path, encoding='utf-8').read()
+    return codecs.open(file_path, encoding="utf-8").read()
 
 
 def find_version(*parts):
@@ -37,65 +35,67 @@ def find_version(*parts):
 
 
 setup(
-    name='django-fluent-contents',
-    version=find_version('fluent_contents', '__init__.py'),
-    license='Apache License, Version 2.0',
-
+    name="django-fluent-contents",
+    version=find_version("fluent_contents", "__init__.py"),
+    license="Apache 2.0",
     install_requires=[
-        'django-fluent-utils>=1.0',        # DRY utility code
-        'django-parler>=1.1.1',            # Needed for Django 1.7 compatibility
-        'django-polymorphic>=0.6',         # Needed for Django 1.7 compatibility
-        'django-tag-parser>=2.0',
-        'django-template-analyzer>=1.4',   # Needed for Django 1.7 compatibility
-        'future>=0.12.2',
-        'six>=1.5.2',
+        "django-fluent-utils>=2.0.0",  # DRY utility code
+        "django-parler>=2.0.1",
+        "django-polymorphic>=2.1.2",
+        "django-tag-parser>=3.2",
+        "django-template-analyzer>=1.6.2",
+        "html5lib >= 1.1",
     ],
-    requires=[
-        'Django (>=1.4)',
-    ],
-    extras_require = {
-        'code': ['Pygments'],
-        'disquscommentsarea': ['django-disqus'],
-        'formdesignerlink': ['django-form-designer'],
-        'markup': ['docutils', 'textile', 'Markdown>=1.7'],
-        'oembeditem': ['micawber>=0.2.6'],
-        'text': ['django-wysiwyg>=0.5.1'],
-        'twitterfeed': ['twitter-text-py>=1.0.3'],
+    requires=["Django (>=2.2)"],
+    extras_require={
+        "code": ["Pygments"],
+        "disquscommentsarea": ["django-disqus"],
+        "formdesignerlink": ["django-form-designer-ai>=1.0.1"],
+        "markup": ["docutils", "textile", "Markdown>=1.7"],
+        "oembeditem": ["micawber>=0.3.3", "beautifulsoup4>=4.3.2"],
+        "text": ["django-wysiwyg>=0.7.1"],
+        "twitterfeed": ["twitter-text>=3.0"],
+        "tests": [
+            "django-wysiwyg",
+            "html5lib",
+            "Pillow",
+            "micawber",
+            "docutils",
+            "textile",
+            "MarkDown",
+            "pygments",
+            "disqus",
+        ],
     },
-    dependency_links = [
-        'git+https://github.com/philomat/django-form-designer.git#egg=django-form-designer',
-    ],
-
-    description='A widget engine to display various content on Django pages',
-    long_description=read('README.rst'),
-
-    author='Diederik van der Boor',
-    author_email='opensource@edoburu.nl',
-
-    url='https://github.com/edoburu/django-fluent-contents',
-    download_url='https://github.com/edoburu/django-fluent-contents/zipball/master',
-
-    packages=find_packages(exclude=('example*',)),
+    tests_require=["docutils", "textile", "Markdown>=1.7"],
+    description="A widget engine to display various content on Django pages",
+    long_description=read("README.rst"),
+    author="Diederik van der Boor",
+    author_email="opensource@edoburu.nl",
+    url="https://github.com/edoburu/django-fluent-contents",
+    download_url="https://github.com/edoburu/django-fluent-contents/zipball/master",
+    packages=find_packages(exclude=("example*",)),
     include_package_data=True,
-
-    test_suite = 'runtests',
-
+    test_suite="runtests",
     zip_safe=False,
     classifiers=[
-        'Development Status :: 4 - Beta',
-        'Environment :: Web Environment',
-        'Framework :: Django',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: Apache Software License',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Topic :: Internet :: WWW/HTTP',
-        'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
-        'Topic :: Software Development :: Libraries :: Application Frameworks',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-    ]
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: Web Environment",
+        "Framework :: Django",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Framework :: Django",
+        "Framework :: Django :: 2.2",
+        "Framework :: Django :: 3.1",
+        "Framework :: Django :: 3.2",
+        "Topic :: Internet :: WWW/HTTP",
+        "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+        "Topic :: Software Development :: Libraries :: Application Frameworks",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
 )
