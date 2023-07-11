@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from django.db import migrations, models
 
 import fluent_contents.extensions
@@ -53,9 +50,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "in_new_window",
-                    models.BooleanField(
-                        default=False, verbose_name="Open in a new window"
-                    ),
+                    models.BooleanField(default=False, verbose_name="Open in a new window"),
                 ),
             ],
             options={

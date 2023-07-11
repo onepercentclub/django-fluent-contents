@@ -6,9 +6,7 @@ from threading import Lock
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ImproperlyConfigured
-from future.utils import string_types
 from fluent_utils.load import import_apps_submodule
-from future.builtins import str
 
 from fluent_contents import appsettings
 from fluent_contents.forms import ContentItemForm
@@ -51,7 +49,7 @@ class PluginNotFound(Exception):
     pass
 
 
-class PluginPool(object):
+class PluginPool:
     """
     The central administration of plugins.
     """
@@ -75,9 +73,7 @@ class PluginPool(object):
         If a plugin is already registered, this will raise a :class:`PluginAlreadyRegistered` exception.
         """
         # Duck-Typing does not suffice here, avoid hard to debug problems by upfront checks.
-        assert issubclass(
-            plugin, ContentPlugin
-        ), "The plugin must inherit from `ContentPlugin`"
+        assert issubclass(plugin, ContentPlugin), "The plugin must inherit from `ContentPlugin`"
         assert plugin.model, "The plugin has no model defined"
         assert issubclass(
             plugin.model, ContentItem
@@ -89,9 +85,7 @@ class PluginPool(object):
         name = plugin.__name__  # using class here, no instance created yet.
         name = name.lower()
         if name in self.plugins:
-            raise PluginAlreadyRegistered(
-                "{0}: a plugin with this name is already registered".format(name)
-            )
+            raise PluginAlreadyRegistered(f"{name}: a plugin with this name is already registered")
 
         # Avoid registering 2 plugins to the exact same model. If you want to reuse code, use proxy models.
         if plugin.model in self._name_for_model:
@@ -128,9 +122,7 @@ class PluginPool(object):
         Return the plugins which are supported in the given placeholder name.
         """
         # See if there is a limit imposed.
-        slot_config = (
-            appsettings.FLUENT_CONTENTS_PLACEHOLDER_CONFIG.get(placeholder_slot) or {}
-        )
+        slot_config = appsettings.FLUENT_CONTENTS_PLACEHOLDER_CONFIG.get(placeholder_slot) or {}
         plugins = slot_config.get("plugins")
         if not plugins:
             return self.get_plugins()
@@ -140,7 +132,7 @@ class PluginPool(object):
             except PluginNotFound as e:
                 raise PluginNotFound(
                     str(e)
-                    + " Update the plugin list of the FLUENT_CONTENTS_PLACEHOLDER_CONFIG['{0}'] setting.".format(
+                    + " Update the plugin list of the FLUENT_CONTENTS_PLACEHOLDER_CONFIG['{}'] setting.".format(
                         placeholder_slot
                     )
                 )
@@ -152,19 +144,17 @@ class PluginPool(object):
         self._import_plugins()
         plugin_instances = []
         for name in names:
-            if isinstance(name, string_types):
+            if isinstance(name, str):
                 try:
                     plugin_instances.append(self.plugins[name.lower()])
                 except KeyError:
-                    raise PluginNotFound("No plugin named '{0}'.".format(name))
+                    raise PluginNotFound(f"No plugin named '{name}'.")
             elif isinstance(name, type) and issubclass(name, ContentPlugin):
                 # Will also allow classes instead of strings.
                 plugin_instances.append(self.plugins[self._name_for_model[name.model]])
             else:
                 raise TypeError(
-                    "get_plugins_by_name() expects a plugin name or class, not: {0}".format(
-                        name
-                    )
+                    "get_plugins_by_name() expects a plugin name or class, not: {}".format(name)
                 )
         return plugin_instances
 
@@ -190,18 +180,14 @@ class PluginPool(object):
         try:
             name = self._name_for_model[model_class]
         except KeyError:
-            raise PluginNotFound(
-                "No plugin found for model '{0}'.".format(model_class.__name__)
-            )
+            raise PluginNotFound(f"No plugin found for model '{model_class.__name__}'.")
         return self.plugins[name]
 
     def _get_plugin_by_content_type(self, contenttype):
         self._import_plugins()
         self._setup_lazy_indexes()
 
-        ct_id = (
-            contenttype.id if isinstance(contenttype, ContentType) else int(contenttype)
-        )
+        ct_id = contenttype.id if isinstance(contenttype, ContentType) else int(contenttype)
         try:
             name = self._name_for_ctype_id[ct_id]
         except KeyError:
@@ -216,11 +202,9 @@ class PluginPool(object):
             except AttributeError:  # should return the stale type but Django <1.6 raises an AttributeError in fact.
                 ct_name = "stale content type"
             else:
-                ct_name = "{0}.{1}".format(ct.app_label, ct.model)
+                ct_name = f"{ct.app_label}.{ct.model}"
             raise PluginNotFound(
-                "No plugin found for content type #{0} ({1}).".format(
-                    contenttype, ct_name
-                )
+                "No plugin found for content type #{} ({}).".format(contenttype, ct_name)
             )
 
         return self.plugins[name]
@@ -254,7 +238,7 @@ class PluginPool(object):
                 ct_id = plugin.type_id
                 if ct_id in plugin_ctypes:
                     raise ImproperlyConfigured(
-                        "The plugin '{0}' returns the same type_id as the '{1}' plugin does".format(
+                        "The plugin '{}' returns the same type_id as the '{}' plugin does".format(
                             plugin.name, plugin_ctypes[ct_id]
                         )
                     )

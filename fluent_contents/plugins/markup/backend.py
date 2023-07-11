@@ -3,7 +3,6 @@ The rendering support of the markup plugin.
 
 This uses the backends from the actual text processing libraries.
 """
-from __future__ import unicode_literals
 
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.safestring import mark_safe
@@ -57,9 +56,7 @@ if appsettings.FLUENT_MARKUP_USE_DJANGO_MARKUP:
         real_filters = list(SUPPORTED_LANGUAGES.keys()) + ["creole"]
         if filter_name in real_filters:
             _languageNames[filter_name] = FilterClass.title
-            SUPPORTED_LANGUAGES[filter_name] = lambda text: mark_safe(
-                formatter(text, filter_name)
-            )
+            SUPPORTED_LANGUAGES[filter_name] = lambda text: mark_safe(formatter(text, filter_name))
 
 # Format as choices
 LANGUAGE_CHOICES = [
@@ -77,7 +74,7 @@ def render_text(text, language=None):
     text_filter = SUPPORTED_LANGUAGES.get(language, None)
     if not text_filter:
         raise ImproperlyConfigured(
-            "markup filter does not exist: {0}. Valid options are: {1}".format(
+            "markup filter does not exist: {}. Valid options are: {}".format(
                 language, ", ".join(list(SUPPORTED_LANGUAGES.keys()))
             )
         )

@@ -1,14 +1,10 @@
-from __future__ import unicode_literals
-
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
-from future.utils import python_2_unicode_compatible
+from django.utils.translation import gettext_lazy as _
 
 from fluent_contents.models import ContentItemManager
 from fluent_contents.models.db import ContentItem
 
 
-@python_2_unicode_compatible
 class TwitterRecentEntriesItem(ContentItem):
     """
     Content item to display recent entries of a twitter user.
@@ -18,9 +14,7 @@ class TwitterRecentEntriesItem(ContentItem):
         _("Title"),
         max_length=200,
         blank=True,
-        help_text=_(
-            "You may use Twitter markup here, such as a #hashtag or @username."
-        ),
+        help_text=_("You may use Twitter markup here, such as a #hashtag or @username."),
     )
 
     twitter_user = models.CharField(_("Twitter user"), max_length=75)
@@ -30,9 +24,7 @@ class TwitterRecentEntriesItem(ContentItem):
         _("Footer text"),
         max_length=200,
         blank=True,
-        help_text=_(
-            "You may use Twitter markup here, such as a #hashtag or @username."
-        ),
+        help_text=_("You may use Twitter markup here, such as a #hashtag or @username."),
     )
     include_retweets = models.BooleanField(_("Include retweets"), default=False)
     include_replies = models.BooleanField(_("Include replies"), default=False)
@@ -47,7 +39,6 @@ class TwitterRecentEntriesItem(ContentItem):
         verbose_name_plural = _("Recent twitter entries")
 
 
-@python_2_unicode_compatible
 class TwitterSearchItem(ContentItem):
     """
     Content item to display recent entries of a twitter user.
@@ -57,9 +48,7 @@ class TwitterSearchItem(ContentItem):
         _("Title"),
         max_length=200,
         blank=True,
-        help_text=_(
-            "You may use Twitter markup here, such as a #hashtag or @username."
-        ),
+        help_text=_("You may use Twitter markup here, such as a #hashtag or @username."),
     )
 
     query = models.CharField(
@@ -76,9 +65,7 @@ class TwitterSearchItem(ContentItem):
         _("Footer text"),
         max_length=200,
         blank=True,
-        help_text=_(
-            "You may use Twitter markup here, such as a #hashtag or @username."
-        ),
+        help_text=_("You may use Twitter markup here, such as a #hashtag or @username."),
     )
     include_retweets = models.BooleanField(_("Include retweets"), default=False)
     include_replies = models.BooleanField(_("Include replies"), default=False)

@@ -1,7 +1,4 @@
-from django.contrib.contenttypes.admin import (
-    BaseGenericInlineFormSet,
-    GenericInlineModelAdmin,
-)
+from django.contrib.contenttypes.admin import BaseGenericInlineFormSet, GenericInlineModelAdmin
 
 from nested_inline.admin import NestedStackedInline, NestedModelAdmin
 
@@ -20,13 +17,11 @@ class BaseContentItemFormSet(BaseGenericInlineFormSet):
         if instance:
             self.current_language = get_parent_language_code(instance)
             if self.current_language and "queryset" in kwargs:
-                kwargs["queryset"] = kwargs["queryset"].filter(
-                    language_code=self.current_language
-                )
+                kwargs["queryset"] = kwargs["queryset"].filter(language_code=self.current_language)
         else:
             self.current_language = appsettings.FLUENT_CONTENTS_DEFAULT_LANGUAGE_CODE
 
-        super(BaseContentItemFormSet, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._deleted_placeholders = ()  # internal property, set by PlaceholderEditorAdmin
 
     def save_new(self, form, commit=True):
@@ -41,7 +36,7 @@ class BaseContentItemFormSet(BaseGenericInlineFormSet):
         self._set_placeholder_id(form)
 
         # As save_new() completely circumvents form.save(), have to insert the language code here.
-        instance = super(BaseContentItemFormSet, self).save_new(form, commit=False)
+        instance = super().save_new(form, commit=False)
         instance.language_code = self.current_language
 
         if commit:
@@ -64,9 +59,7 @@ class BaseContentItemFormSet(BaseGenericInlineFormSet):
             ]  # could already be updated, or still point to previous placeholder.
 
             if not form_placeholder or form_placeholder.slot != form_slot:
-                desired_placeholder = Placeholder.objects.parent(self.instance).get(
-                    slot=form_slot
-                )
+                desired_placeholder = Placeholder.objects.parent(self.instance).get(slot=form_slot)
                 form.cleaned_data["placeholder"] = desired_placeholder
                 form.instance.placeholder = desired_placeholder
 
@@ -118,42 +111,36 @@ class BaseContentItemInline(NestedStackedInline, GenericInlineModelAdmin):
     base_fields = ("placeholder", "placeholder_slot", "sort_order")
 
     def __init__(self, *args, **kwargs):
-        super(BaseContentItemInline, self).__init__(*args, **kwargs)
-        self.verbose_name_plural = u"---- ContentItem Inline: %s" % (
+        super().__init__(*args, **kwargs)
+        self.verbose_name_plural = "---- ContentItem Inline: {}".format(
             self.verbose_name_plural,
         )
 
     @property
     def media(self):
-        media = super(BaseContentItemInline, self).media
+        media = super().media
         if self.plugin:
             media += self.plugin.media  # form fields first, plugin afterwards
         return media
 
     def get_formset(self, request, obj=None, **kwargs):
-        FormSet = super(BaseContentItemInline, self).get_formset(
-            request, obj=obj, **kwargs
-        )
+        FormSet = super().get_formset(request, obj=obj, **kwargs)
 
         # Make sure that the automatically generated form does have all our common fields first.
         # This allows the admin CSS to pick .form-row:last-child
         form = FormSet.form
         first_fields = list(ContentItemForm.base_fields.keys())
-        field_order = first_fields + [
-            f for f in form.base_fields.keys() if f not in first_fields
-        ]
+        field_order = first_fields + [f for f in form.base_fields.keys() if f not in first_fields]
 
         # Recreate collections.OrderedDict object
         base_fields = form.base_fields
-        form.base_fields = base_fields.__class__(
-            (k, base_fields[k]) for k in field_order
-        )
+        form.base_fields = base_fields.__class__((k, base_fields[k]) for k in field_order)
         return FormSet
 
     def get_fieldsets(self, request, obj=None):
         # If subclass declares fieldsets, this is respected
         if not self.extra_fieldsets or getattr(self, "declared_fieldsets", None):
-            return super(BaseContentItemInline, self).get_fieldsets(request, obj)
+            return super().get_fieldsets(request, obj)
 
         return ((None, {"fields": self.base_fields}),) + self.extra_fieldsets
 
@@ -165,9 +152,7 @@ class BaseContentItemInline(NestedStackedInline, GenericInlineModelAdmin):
             kwargs = dict(attrs, **kwargs)
         except KeyError:
             pass
-        return super(BaseContentItemInline, self).formfield_for_dbfield(
-            db_field, **kwargs
-        )
+        return super().formfield_for_dbfield(db_field, **kwargs)
 
 
 def get_content_item_inlines(plugins=None, base=BaseContentItemInline):
@@ -194,7 +179,7 @@ def get_content_item_inlines(plugins=None, base=BaseContentItemInline):
         # Avoid errors that are hard to trace
         if not isinstance(plugin, extensions.ContentPlugin):
             raise TypeError(
-                "get_content_item_inlines() expects to receive ContentPlugin instances, not {0}".format(
+                "get_content_item_inlines() expects to receive ContentPlugin instances, not {}".format(
                     plugin
                 )
             )

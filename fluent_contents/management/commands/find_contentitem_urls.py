@@ -6,8 +6,7 @@ from django.core.management.base import BaseCommand
 from django.db import ProgrammingError, models
 from django.db.models import Q
 from django.utils import translation
-from django.utils.encoding import force_text
-from future.utils import text_type
+from django.utils.encoding import force_str
 from html5lib import HTMLParser, treebuilders
 
 from fluent_contents.extensions import (
@@ -24,7 +23,7 @@ except ImportError:
 
 
 def unquote_utf8(value):
-    return force_text(unquote(value))
+    return force_str(unquote(value))
 
 
 class Command(BaseCommand):
@@ -43,13 +42,11 @@ class Command(BaseCommand):
         urls = []
 
         # Look through all registered models.
-        for model in sorted(
-            self.get_models(), key=lambda model: model._meta.model_name
-        ):
+        for model in sorted(self.get_models(), key=lambda model: model._meta.model_name):
             try:
                 urls += self.inspect_model(model)
             except ProgrammingError as e:
-                self.stderr.write(force_text(e))
+                self.stderr.write(force_str(e))
 
         self.stdout.write("")
         for url in sorted(set(urls)):
@@ -68,37 +65,25 @@ class Command(BaseCommand):
         """
         # See which interesting fields the model holds.
         url_fields = sorted(
-            f
-            for f in model._meta.fields
-            if isinstance(f, (PluginUrlField, models.URLField))
+            f for f in model._meta.fields if isinstance(f, (PluginUrlField, models.URLField))
         )
         file_fields = sorted(
-            f
-            for f in model._meta.fields
-            if isinstance(f, (PluginImageField, models.FileField))
+            f for f in model._meta.fields if isinstance(f, (PluginImageField, models.FileField))
         )
         html_fields = sorted(
-            f
-            for f in model._meta.fields
-            if isinstance(f, (models.TextField, PluginHtmlField))
+            f for f in model._meta.fields if isinstance(f, (models.TextField, PluginHtmlField))
         )
         all_fields = [f.name for f in (file_fields + html_fields + url_fields)]
         if not all_fields:
             return []
 
         if model.__name__ in self.exclude:
-            self.stderr.write(
-                "Skipping {0} ({1})\n".format(model.__name__, ", ".join(all_fields))
-            )
+            self.stderr.write("Skipping {} ({})\n".format(model.__name__, ", ".join(all_fields)))
             return []
 
-        sys.stderr.write(
-            "Inspecting {0} ({1})\n".format(model.__name__, ", ".join(all_fields))
-        )
+        sys.stderr.write("Inspecting {} ({})\n".format(model.__name__, ", ".join(all_fields)))
 
-        q_notnull = reduce(
-            operator.or_, (Q(**{"{0}__isnull".format(f): False}) for f in all_fields)
-        )
+        q_notnull = reduce(operator.or_, (Q(**{f"{f}__isnull": False}) for f in all_fields))
         qs = model.objects.filter(q_notnull).order_by("pk")
 
         urls = []
@@ -125,8 +110,8 @@ class Command(BaseCommand):
             for field in url_fields:
                 value = getattr(object, field.name)
                 if value:
-                    if isinstance(value, text_type):
-                        value = force_text(value)
+                    if isinstance(value, str):
+                        value = force_str(value)
                     else:
                         value = value.to_db_value()  # AnyUrlValue
 
@@ -136,9 +121,7 @@ class Command(BaseCommand):
 
     def show_match(self, object, value):
         if self.verbosity >= 2:
-            self.stdout.write(
-                u"{0}#{1}: \t{2}".format(object.__class__.__name__, object.pk, value)
-            )
+            self.stdout.write(f"{object.__class__.__name__}#{object.pk}: \t{value}")
 
     def extract_html_urls(self, html):
         """

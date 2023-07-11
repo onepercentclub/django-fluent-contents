@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from django.db import migrations, models
 
 import fluent_contents.utils.validators
@@ -39,9 +36,7 @@ class Migration(migrations.Migration):
                         help_text="Specify the size in pixels, or a percentage of the container area size.",
                         max_length=10,
                         verbose_name="Width",
-                        validators=[
-                            fluent_contents.utils.validators.validate_html_size
-                        ],
+                        validators=[fluent_contents.utils.validators.validate_html_size],
                     ),
                 ),
                 (
@@ -51,9 +46,7 @@ class Migration(migrations.Migration):
                         help_text="Specify the size in pixels.",
                         max_length=10,
                         verbose_name="Height",
-                        validators=[
-                            fluent_contents.utils.validators.validate_html_size
-                        ],
+                        validators=[fluent_contents.utils.validators.validate_html_size],
                     ),
                 ),
             ],

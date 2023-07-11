@@ -12,9 +12,7 @@ FLUENT_MARKUP_LANGUAGES = getattr(
 FLUENT_MARKUP_MARKDOWN_EXTRAS = getattr(settings, "FLUENT_MARKUP_MARKDOWN_EXTRAS", [])
 
 # Experimental:
-FLUENT_MARKUP_USE_DJANGO_MARKUP = getattr(
-    settings, "FLUENT_MARKUP_USE_DJANGO_MARKUP", False
-)
+FLUENT_MARKUP_USE_DJANGO_MARKUP = getattr(settings, "FLUENT_MARKUP_USE_DJANGO_MARKUP", False)
 
 dependencies = {
     "restructuredtext": "docutils",
@@ -32,7 +30,7 @@ for language in FLUENT_MARKUP_LANGUAGES:
             __import__(backendapp)
         except ImportError as e:
             raise ImproperlyConfigured(
-                "The '{0}' package is required to use the '{1}' language for the '{2}' plugin.".format(
+                "The '{}' package is required to use the '{}' language for the '{}' plugin.".format(
                     backendapp, language, "markup"
                 )
             )

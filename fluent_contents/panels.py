@@ -6,7 +6,7 @@ from datetime import timedelta
 from debug_toolbar.panels import Panel
 from debug_toolbar.utils import ThreadCollector
 from django.contrib.contenttypes.models import ContentType
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from fluent_contents.extensions import PluginNotFound
 from fluent_contents.models import ContentItem
@@ -22,7 +22,7 @@ class DebugResultTracker(ResultTracker):
     """
 
     def __init__(self, *args, **kwargs):
-        super(DebugResultTracker, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # Reference this result in the data collector.
         collector.collect(self)
         # Track that the object was never cachable
@@ -38,7 +38,7 @@ class ContentPluginPanel(Panel):
     template = "fluent_contents/debug_toolbar_panel.html"
 
     def __init__(self, toolbar):
-        super(ContentPluginPanel, self).__init__(toolbar)
+        super().__init__(toolbar)
 
     def enable_instrumentation(self):
         # Patch the regular rendering to report to the debug toolbar
@@ -56,9 +56,7 @@ class ContentPluginPanel(Panel):
 
     @property
     def nav_subtitle(self):
-        return _("{0} items in {1} placeholders").format(
-            self.num_items, self.num_placeholders
-        )
+        return _("{0} items in {1} placeholders").format(self.num_items, self.num_placeholders)
 
     def process_response(self, request, response):
         # Serialize to dict to store as debug toolbar stats
@@ -67,10 +65,8 @@ class ContentPluginPanel(Panel):
         self.num_placeholders = 0
         for resulttracker in collector.get_collection():
             rendered_items = []
-            retreived_items = set(item.pk for item in resulttracker.remaining_items)
-            for contentitem, output in resulttracker.get_output(
-                include_exceptions=True
-            ):
+            retreived_items = {item.pk for item in resulttracker.remaining_items}
+            for contentitem, output in resulttracker.get_output(include_exceptions=True):
                 is_cached = contentitem.pk not in retreived_items
 
                 try:
@@ -89,7 +85,7 @@ class ContentPluginPanel(Panel):
                             "model": content_type.model
                             if content_type is not None
                             else "<ContentType unknown>",
-                            "model_path": "{0}.{1}".format(
+                            "model_path": "{}.{}".format(
                                 content_type.app_label, content_type.model
                             )
                             if content_type is not None
@@ -115,9 +111,7 @@ class ContentPluginPanel(Panel):
                         templates = plugin.get_render_template(request, contentitem)
                         template_dummy = False
 
-                    if templates is not None and not isinstance(
-                        templates, (list, tuple)
-                    ):
+                    if templates is not None and not isinstance(templates, (list, tuple)):
                         templates = [templates]
 
                     cache_timeout = None
@@ -134,9 +128,7 @@ class ContentPluginPanel(Panel):
                             cache_timeout = plugin.cache_timeout
 
                         cache_timeout = (
-                            None
-                            if isinstance(cache_timeout, object)
-                            else int(cache_timeout)
+                            None if isinstance(cache_timeout, object) else int(cache_timeout)
                         )
 
                     rendered_items.append(
@@ -172,9 +164,7 @@ class ContentPluginPanel(Panel):
                     "parent_model": parent_object.__class__.__name__
                     if parent_object is not None
                     else None,
-                    "parent_id": parent_object.pk
-                    if parent_object is not None
-                    else None,
+                    "parent_id": parent_object.pk if parent_object is not None else None,
                     "slot": resulttracker.placeholder_name,
                     "debug_name": _debug_name(resulttracker),
                     "all_cachable": resulttracker.all_cacheable,
@@ -194,7 +184,7 @@ class ContentPluginPanel(Panel):
 
 
 def _full_python_path(cls):
-    return "{0}.{1}".format(cls.__module__, cls.__name__)
+    return f"{cls.__module__}.{cls.__name__}"
 
 
 def _debug_name(resulttracker):

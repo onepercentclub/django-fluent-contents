@@ -27,8 +27,8 @@ class Command(BaseCommand):
                 num_updated += 1
 
         self.stdout.write(
-            ngettext(
-                u"{count} item updated.", u"{count} items updated.", num_updated
-            ).format(count=num_updated)
-            + u" "
+            ngettext("{count} item updated.", "{count} items updated.", num_updated).format(
+                count=num_updated
+            )
+            + " "
         )

@@ -1,20 +1,17 @@
-from __future__ import unicode_literals
-
 from copy import deepcopy
 
-import django
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection, models
 from django.db.backends.utils import truncate_name
 from django.dispatch import receiver
 from django.utils.functional import cached_property
-from django.utils.translation import ugettext_lazy as _
-from future.utils import PY3, python_2_unicode_compatible, with_metaclass
+from django.utils.translation import gettext_lazy as _
 from parler.models import TranslatableModel
 from parler.signals import post_translation_delete
 from parler.utils import get_language_title
 from polymorphic.base import PolymorphicModelBase
+from polymorphic.models import PolymorphicModel
 
 from fluent_contents import appsettings
 from fluent_contents.cache import get_placeholder_cache_key
@@ -25,16 +22,10 @@ from fluent_contents.models.managers import (
 )
 from fluent_contents.models.mixins import CachedModelMixin
 
-try:
-    from polymorphic.models import PolymorphicModel  # django-polymorphic 0.8
-except ImportError:
-    from polymorphic import PolymorphicModel
-
 # Leave flag so testing this feature is possible.
 OPTIMIZE_TRANSLATED_MODEL = True
 
 
-@python_2_unicode_compatible
 class Placeholder(models.Model):
     """
     The placeholder groups various :class:`ContentItem` models together in a single compartment.
@@ -80,9 +71,7 @@ class Placeholder(models.Model):
     # parent_type was envisioned to be null for global placeholders,
     # but the 'sharedcontent' plugin solves this issue in a better way.
     # parent_id needs to allow Null, because Placeholder is created before parent is saved.
-    parent_type = models.ForeignKey(
-        ContentType, on_delete=models.CASCADE, null=True, blank=True
-    )
+    parent_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
     parent_id = models.IntegerField(null=True)
     parent = GenericForeignKey("parent_type", "parent_id")
 
@@ -100,7 +89,7 @@ class Placeholder(models.Model):
         return self.title or self.slot
 
     def __repr__(self):
-        return "<{0}: {1}; slot: {2}>".format(self.__class__.__name__, self, self.slot)
+        return f"<{self.__class__.__name__}: {self}; slot: {self.slot}>"
 
     def get_allowed_plugins(self):
         """
@@ -137,17 +126,13 @@ class Placeholder(models.Model):
             # Filtering by parent should return the same results,
             # unless the database is broken by having objects reference the wrong placeholders.
             # Additionally, the `limit_parent_language` argument is supported.
-            item_qs = item_qs.parent(
-                parent, limit_parent_language=limit_parent_language
-            )
+            item_qs = item_qs.parent(parent, limit_parent_language=limit_parent_language)
         else:
             # For accurate rendering filtering by parent is needed.
             # Otherwise, we risk returning stale objects which are indeed attached to this placeholder,
             # but belong to a different parent. This can only happen when manually changing database contents.
             # The admin won't display anything, as it always filters the parent. Hence, do the same for other queries.
-            item_qs = item_qs.filter(
-                parent_type_id=self.parent_type_id, parent_id=self.parent_id
-            )
+            item_qs = item_qs.filter(parent_type_id=self.parent_type_id, parent_id=self.parent_id)
 
         return item_qs
 
@@ -181,7 +166,7 @@ class Placeholder(models.Model):
         # Some databases may not have a proper ON DELETE rule set, causing a DatabaseError on delete.
         # This happened because South 0.7.4 didn't support on_delete=SET_NULL.
         ContentItem.objects.filter(placeholder=self).update(placeholder=None)
-        super(Placeholder, self).delete(*args, **kwargs)
+        super().delete(*args, **kwargs)
 
     delete.alters_data = True
 
@@ -196,15 +181,7 @@ class ContentItemMetaClass(PolymorphicModelBase):
     # Inspired by from Django-CMS, (c) , BSD licensed.
 
     def __new__(mcs, name, bases, attrs):
-        if django.VERSION < (2, 0):
-            # Silence polymorphic messages for wrong manager inheritance,
-            # let everything work just like before.
-            try:
-                attrs["Meta"].manager_inheritance_from_future = True
-            except KeyError:
-                pass
-
-        new_class = super(ContentItemMetaClass, mcs).__new__(mcs, name, bases, attrs)
+        new_class = super().__new__(mcs, name, bases, attrs)
         db_table = new_class._meta.db_table
         app_label = new_class._meta.app_label
 
@@ -212,48 +189,26 @@ class ContentItemMetaClass(PolymorphicModelBase):
             if db_table.startswith(app_label + "_"):
                 model_name = db_table[len(app_label) + 1 :]
                 new_class._meta.db_table = truncate_name(
-                    "contentitem_%s_%s" % (app_label, model_name),
+                    f"contentitem_{app_label}_{model_name}",
                     connection.ops.max_name_length(),
                 )
                 if hasattr(new_class._meta, "original_attrs"):
                     # Make sure that the Django migrations also pick up this change!
                     # Changing the db_table beforehand might be cleaner,
                     # but also requires duplicating the whole algorithm that Django uses.
-                    new_class._meta.original_attrs[
-                        "db_table"
-                    ] = new_class._meta.db_table
+                    new_class._meta.original_attrs["db_table"] = new_class._meta.db_table
 
             # Enforce good manners. The name is often not visible, except for the delete page.
             if not new_class._meta.abstract:
-                if (
-                    not hasattr(new_class, "__str__")
-                    or new_class.__str__ == ContentItem.__str__
-                ):
-                    if PY3:
-                        raise TypeError(
-                            "The {0} class should implement a __str__() function.".format(
-                                name
-                            )
-                        )
-                    else:
-                        # The first check is for python_2_unicode_compatible tricks, also check for __unicode__ only.
-                        if (
-                            not hasattr(new_class, "__unicode__")
-                            or new_class.__unicode__ == ContentItem.__unicode__
-                        ):
-                            raise TypeError(
-                                "The {0} class should implement a __unicode__() or __str__() function.".format(
-                                    name
-                                )
-                            )
+                if not hasattr(new_class, "__str__") or new_class.__str__ == ContentItem.__str__:
+                    raise TypeError(
+                        "The {} class should implement a __str__() function.".format(name)
+                    )
 
         return new_class
 
 
-@python_2_unicode_compatible
-class ContentItem(
-    with_metaclass(ContentItemMetaClass, CachedModelMixin, PolymorphicModel)
-):
+class ContentItem(CachedModelMixin, PolymorphicModel, metaclass=ContentItemMetaClass):
     """
     A `ContentItem` represents a content part (also called pagelet in other systems) which is displayed in a :class:`Placeholder`.
     To use the `ContentItem`, derive it in your model class:
@@ -326,9 +281,7 @@ class ContentItem(
     parent_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     parent_id = models.IntegerField(null=True)
     parent = GenericForeignKey("parent_type", "parent_id")
-    language_code = models.CharField(
-        max_length=15, db_index=True, editable=False, default=""
-    )
+    language_code = models.CharField(max_length=15, db_index=True, editable=False, default="")
 
     # Deleting a placeholder should not remove the items, only makes them orphaned.
     # Also, when updating the page, the PlaceholderEditorInline first adds/deletes placeholders before the items are updated.
@@ -359,9 +312,7 @@ class ContentItem(
         # Note this representation is optimized for the admin delete page.
         # Make sure that the
         try:
-            real_type = ContentType.objects.get_for_id(
-                self.polymorphic_ctype_id
-            ).model_class()
+            real_type = ContentType.objects.get_for_id(self.polymorphic_ctype_id).model_class()
         except ContentType.DoesNotExist:
             real_type_text = "(type deleted)"
         else:
@@ -373,9 +324,7 @@ class ContentItem(
         return "'{type} {id:d}' in '{language} {placeholder}'".format(
             type=real_type_text,
             id=self.id or 0,
-            language=get_language_title(self.language_code)
-            if self.language_code
-            else None,
+            language=get_language_title(self.language_code) if self.language_code else None,
             placeholder=self.placeholder,
         )
 
@@ -451,7 +400,7 @@ class ContentItem(
                 or appsettings.FLUENT_CONTENTS_DEFAULT_LANGUAGE_CODE
             )
 
-        super(ContentItem, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     save.alters_data = True
 

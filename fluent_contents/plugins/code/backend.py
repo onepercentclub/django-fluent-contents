@@ -1,7 +1,7 @@
 """
 Using pygments to render the code.
 """
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from pygments import highlight, styles
 from pygments.formatters.html import HtmlFormatter
 from pygments.lexers import get_all_lexers, get_lexer_by_name
@@ -17,13 +17,9 @@ _languageChoices = [
 ]  # x = ('Title', ('name1', 'name2', 'nameN'), ('*.ext1', '*.ext2'), ('mimetype1',))
 _languageChoices.sort(key=lambda x: x[1].lower())
 
-LANGUAGE_CHOICES = tuple(
-    [t for t in _languageChoices if t[0] in appsettings.FLUENT_CODE_SHORTLIST]
-)
+LANGUAGE_CHOICES = tuple(t for t in _languageChoices if t[0] in appsettings.FLUENT_CODE_SHORTLIST)
 if not appsettings.FLUENT_CODE_SHORTLIST_ONLY:
-    LANGUAGE_CHOICES += (
-        (_("Combinations"), [t for t in _languageChoices if "+" in t[0]]),
-    )
+    LANGUAGE_CHOICES += ((_("Combinations"), [t for t in _languageChoices if "+" in t[0]]),)
     LANGUAGE_CHOICES += (
         (
             _("Advanced"),

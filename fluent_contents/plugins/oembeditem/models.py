@@ -1,8 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
-from future.builtins import str
-from future.utils import python_2_unicode_compatible
+from django.utils.translation import gettext_lazy as _
 from micawber import ProviderException
 
 from fluent_contents.models import ContentItemManager
@@ -11,7 +9,6 @@ from fluent_contents.plugins.oembeditem import appsettings, backend
 from fluent_contents.plugins.oembeditem.fields import OEmbedUrlField
 
 
-@python_2_unicode_compatible
 class AbstractOEmbedItem(ContentItem):
     """
     The base class for an OEmbedItem,
@@ -28,9 +25,7 @@ class AbstractOEmbedItem(ContentItem):
     # Fetch parameters
     embed_url = OEmbedUrlField(_("URL to embed"))
     embed_max_width = models.PositiveIntegerField(_("Max width"), blank=True, null=True)
-    embed_max_height = models.PositiveIntegerField(
-        _("Max height"), blank=True, null=True
-    )
+    embed_max_height = models.PositiveIntegerField(_("Max height"), blank=True, null=True)
 
     # The cached response:
     type = models.CharField(editable=False, max_length=20, null=True, blank=True)
@@ -38,13 +33,9 @@ class AbstractOEmbedItem(ContentItem):
     title = models.CharField(editable=False, max_length=512, null=True, blank=True)
     description = models.TextField(editable=False, null=True, blank=True)
 
-    author_name = models.CharField(
-        editable=False, max_length=255, null=True, blank=True
-    )
+    author_name = models.CharField(editable=False, max_length=255, null=True, blank=True)
     author_url = models.URLField(editable=False, null=True, blank=True)
-    provider_name = models.CharField(
-        editable=False, max_length=255, null=True, blank=True
-    )
+    provider_name = models.CharField(editable=False, max_length=255, null=True, blank=True)
     provider_url = models.URLField(editable=False, null=True, blank=True)
 
     thumbnail_url = models.URLField(editable=False, null=True, blank=True)
@@ -66,14 +57,14 @@ class AbstractOEmbedItem(ContentItem):
         return self.title or self.embed_url
 
     def __init__(self, *args, **kwargs):
-        super(AbstractOEmbedItem, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._old_embed_url = self.embed_url
         self._old_embed_max_width = self.embed_max_width
         self._old_embed_max_height = self.embed_max_height
 
     def save(self, *args, **kwargs):
         self.update_oembed_data()  # if clean() did not run, still update the oembed
-        super(AbstractOEmbedItem, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def clean(self):
         # Avoid getting server errors when the URL is not valid.
@@ -88,9 +79,7 @@ class AbstractOEmbedItem(ContentItem):
 
         .. versionadded:: 1.0 Added force and backend_params parameters.
         """
-        if appsettings.FLUENT_OEMBED_FORCE_HTTPS and self.embed_url.startswith(
-            "http://"
-        ):
+        if appsettings.FLUENT_OEMBED_FORCE_HTTPS and self.embed_url.startswith("http://"):
             self.embed_url = "https://" + self.embed_url[7:]
 
         if force or self._input_changed():

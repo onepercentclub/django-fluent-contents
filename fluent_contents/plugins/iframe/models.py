@@ -1,14 +1,10 @@
-from __future__ import unicode_literals
-
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
-from future.utils import python_2_unicode_compatible
+from django.utils.translation import gettext_lazy as _
 
 from fluent_contents.models import ContentItem, ContentItemManager
 from fluent_contents.utils import validate_html_size
 
 
-@python_2_unicode_compatible
 class IframeItem(ContentItem):
     """
     An ``<iframe>`` that is displayed at the page..
@@ -20,9 +16,7 @@ class IframeItem(ContentItem):
         max_length=10,
         validators=[validate_html_size],
         default="100%",
-        help_text=_(
-            "Specify the size in pixels, or a percentage of the container area size."
-        ),
+        help_text=_("Specify the size in pixels, or a percentage of the container area size."),
     )
     height = models.CharField(
         _("Height"),

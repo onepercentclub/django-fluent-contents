@@ -5,10 +5,7 @@ from nested_inline.admin import NestedModelAdmin
 from django.forms import Media
 
 from fluent_contents import extensions
-from fluent_contents.admin.placeholdereditor import (
-    PlaceholderEditorAdmin,
-    PlaceholderEditorInline,
-)
+from fluent_contents.admin.placeholdereditor import PlaceholderEditorAdmin, PlaceholderEditorInline
 from fluent_contents.models import PlaceholderData
 from fluent_contents.models.fields import PlaceholderField
 
@@ -23,10 +20,8 @@ class PlaceholderFieldInline(PlaceholderEditorInline):
     @property
     def media(self):
         # Avoid cp_tabs.js for the placeholder field.
-        media = super(PlaceholderFieldInline, self).media
-        return Media(
-            js=[f for f in media._js if not f.endswith("cp_tabs.js")], css=media._css
-        )
+        media = super().media
+        return Media(js=[f for f in media._js if not f.endswith("cp_tabs.js")], css=media._css)
 
     inlines = []
 
@@ -50,15 +45,15 @@ class PlaceholderFieldAdmin(PlaceholderEditorAdmin, NestedModelAdmin):
         kwargs["formfield_callback"] = partial(
             self.formfield_for_dbfield, request=request, obj=obj
         )
-        return super(PlaceholderFieldAdmin, self).get_form(request, obj=obj, **kwargs)
+        return super().get_form(request, obj=obj, **kwargs)
 
-    def formfield_for_dbfield(self, db_field, **kwargs):
+    def formfield_for_dbfield(self, db_field, request=None, **kwargs):
         obj = kwargs.pop("obj", None)
+        if request:
+            kwargs["request"] = request
         if isinstance(db_field, PlaceholderField):
             kwargs["parent_object"] = obj
-        return super(PlaceholderFieldAdmin, self).formfield_for_dbfield(
-            db_field, **kwargs
-        )
+        return super().formfield_for_dbfield(db_field, **kwargs)
 
     def get_placeholder_data(self, request, obj=None):
         """

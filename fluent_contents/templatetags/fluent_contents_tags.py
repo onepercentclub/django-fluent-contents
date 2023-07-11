@@ -33,11 +33,7 @@ from tag_parser.basetags import BaseAssignmentOrOutputNode, BaseNode
 from fluent_contents import appsettings, rendering
 from fluent_contents.models import ImmutableMedia, Placeholder
 from fluent_contents.rendering import get_cached_placeholder_output
-from fluent_contents.utils.templatetags import (
-    extract_literal,
-    extract_literal_bool,
-    is_true,
-)
+from fluent_contents.utils.templatetags import extract_literal, extract_literal_bool, is_true
 
 register = Library()
 
@@ -100,9 +96,7 @@ class PagePlaceholderNode(BaseAssignmentOrOutputNode):
     max_args = 2
 
     def __init__(self, tag_name, as_var, parent_expr, slot_expr, **kwargs):
-        super(PagePlaceholderNode, self).__init__(
-            tag_name, as_var, parent_expr, slot_expr, **kwargs
-        )
+        super().__init__(tag_name, as_var, parent_expr, slot_expr, **kwargs)
         self.slot_expr = slot_expr
 
         # Move some arguments outside the regular "kwargs"
@@ -143,7 +137,7 @@ class PagePlaceholderNode(BaseAssignmentOrOutputNode):
             slot_expr = args[0]
         else:
             raise TemplateSyntaxError(
-                """{0} tag allows two arguments: 'parent object' 'slot name' and optionally: title=".." role="..".""".format(
+                """{} tag allows two arguments: 'parent object' 'slot name' and optionally: title=".." role="..".""".format(
                     tag_name
                 )
             )
@@ -154,7 +148,7 @@ class PagePlaceholderNode(BaseAssignmentOrOutputNode):
             as_var=as_var,
             parent_expr=parent_expr,
             slot_expr=slot_expr,
-            **kwargs
+            **kwargs,
         )
 
     def get_slot(self):
@@ -214,7 +208,7 @@ class PagePlaceholderNode(BaseAssignmentOrOutputNode):
             # It's not possible to create a reliable output cache for for that,
             # as it would have to include any possible template name in the key.
             raise TemplateSyntaxError(
-                "{0} tag does not allow 'cachable' for variable template names!".format(
+                "{} tag does not allow 'cachable' for variable template names!".format(
                     self.tag_name
                 )
             )
@@ -235,7 +229,7 @@ class PagePlaceholderNode(BaseAssignmentOrOutputNode):
             try:
                 placeholder = Placeholder.objects.get_by_slot(parent, slot)
             except Placeholder.DoesNotExist:
-                return "<!-- placeholder '{0}' does not yet exist -->".format(slot)
+                return f"<!-- placeholder '{slot}' does not yet exist -->"
 
             output = rendering.render_placeholder(
                 request,
@@ -278,12 +272,10 @@ class RenderPlaceholderNode(BaseAssignmentOrOutputNode):
     def validate_args(cls, tag_name, *args, **kwargs):
         if len(args) != 1:
             raise TemplateSyntaxError(
-                """{0} tag allows only one parameter: a placeholder object.""".format(
-                    tag_name
-                )
+                """{} tag allows only one parameter: a placeholder object.""".format(tag_name)
             )
 
-        super(RenderPlaceholderNode, cls).validate_args(tag_name, *args, **kwargs)
+        super().validate_args(tag_name, *args, **kwargs)
 
     def get_value(self, context, *tag_args, **tag_kwargs):
         request = self.get_request(context)
@@ -292,7 +284,7 @@ class RenderPlaceholderNode(BaseAssignmentOrOutputNode):
         try:
             placeholder = _get_placeholder_arg(self.args[0], tag_args[0])
         except RuntimeWarning as e:
-            return u"<!-- {0} -->".format(e)
+            return f"<!-- {e} -->"
 
         template_name = tag_kwargs.get("template", None)
         # cachable default is True unless there is a template.
@@ -303,7 +295,7 @@ class RenderPlaceholderNode(BaseAssignmentOrOutputNode):
             # If the template name originates from a variable, it can change any time.
             # See PagePlaceholderNode.render_tag() why this is not allowed.
             raise TemplateSyntaxError(
-                "{0} tag does not allow 'cachable' for variable template names!".format(
+                "{} tag does not allow 'cachable' for variable template names!".format(
                     self.tag_name
                 )
             )
@@ -329,7 +321,7 @@ def _get_placeholder_arg(arg_name, placeholder):
     Validate and return the Placeholder object that the template variable points to.
     """
     if placeholder is None:
-        raise RuntimeWarning(u"placeholder object is None")
+        raise RuntimeWarning("placeholder object is None")
     elif isinstance(placeholder, Placeholder):
         return placeholder
     elif isinstance(placeholder, Manager):
@@ -345,13 +337,9 @@ def _get_placeholder_arg(arg_name, placeholder):
                 placeholder.parent = parent_object  # Fill GFK cache
             return placeholder
         except IndexError:
-            raise RuntimeWarning(
-                u"No placeholders found for query '{0}.all.0'".format(arg_name)
-            )
+            raise RuntimeWarning(f"No placeholders found for query '{arg_name}.all.0'")
     else:
-        raise ValueError(
-            u"The field '{0}' does not refer to a placeholder object!".format(arg_name)
-        )
+        raise ValueError(f"The field '{arg_name}' does not refer to a placeholder object!")
 
 
 @register.tag
@@ -389,17 +377,15 @@ class RenderContentItemsMedia(BaseNode):
 
     @classmethod
     def validate_args(cls, tag_name, *args, **kwargs):
-        super(RenderContentItemsMedia, cls).validate_args(tag_name, *args, **kwargs)
+        super().validate_args(tag_name, *args, **kwargs)
         if args:
             if args[0] not in ("css", "js"):
                 raise TemplateSyntaxError(
-                    "'{0}' tag only supports `css` or `js` as first argument".format(
-                        tag_name
-                    )
+                    "'{}' tag only supports `css` or `js` as first argument".format(tag_name)
                 )
             if len(args) > 1 and args[1] not in ("local", "external"):
                 raise TemplateSyntaxError(
-                    "'{0}' tag only supports `local` or `external` as second argument".format(
+                    "'{}' tag only supports `local` or `external` as second argument".format(
                         tag_name
                     )
                 )
@@ -409,18 +395,18 @@ class RenderContentItemsMedia(BaseNode):
 
         media = rendering.get_frontend_media(request)
         if not media or not (media._js or media._css):
-            return u""
+            return ""
 
         if not media_type:
             return media.render()
         elif media_type == "js":
             if domain:
                 media = _split_js(media, domain)
-            return u"\n".join(media.render_js())
+            return "\n".join(media.render_js())
         elif media_type == "css":
             if domain:
                 media = _split_css(media, domain)
-            return u"\n".join(media.render_css())
+            return "\n".join(media.render_css())
         else:
             return ""
 
@@ -434,9 +420,7 @@ else:
 def _is_local(url):
     # URL can be http:// if that's what's also in STATIC_URL.
     # Otherwise, the domain is external.
-    return not url.startswith(("//", "http://", "https://")) or url.startswith(
-        _LOCAL_PREFIX
-    )
+    return not url.startswith(("//", "http://", "https://")) or url.startswith(_LOCAL_PREFIX)
 
 
 def _split_js(media, domain):

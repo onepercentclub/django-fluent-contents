@@ -3,7 +3,7 @@ from django.contrib.admin.widgets import AdminTextareaWidget
 from django.forms.utils import flatatt
 from django.forms.widgets import Widget
 from django.template.loader import render_to_string
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
@@ -23,9 +23,7 @@ class PlaceholderFieldWidget(Widget):
 
     class Media:
         js = (
-            "admin/js/vendor/jquery/jquery{}.js".format(
-                "" if settings.DEBUG else ".min"
-            ),
+            "admin/js/vendor/jquery/jquery{}.js".format("" if settings.DEBUG else ".min"),
             "admin/js/jquery.init.js",
             "fluent_contents/admin/cp_admin.js",
             "fluent_contents/admin/cp_data.js",
@@ -34,7 +32,7 @@ class PlaceholderFieldWidget(Widget):
         css = {"screen": ("fluent_contents/admin/cp_admin.css",)}
 
     def __init__(self, attrs=None, slot=None, parent_object=None, plugins=None):
-        super(PlaceholderFieldWidget, self).__init__(attrs)
+        super().__init__(attrs)
         self.slot = slot
         self._plugins = plugins
         self.parent_object = parent_object
@@ -64,9 +62,7 @@ class PlaceholderFieldWidget(Widget):
             "other_instance_languages": other_instance_languages,
         }
         return mark_safe(
-            render_to_string(
-                "admin/fluent_contents/placeholderfield/widget.html", context
-            )
+            render_to_string("admin/fluent_contents/placeholderfield/widget.html", context)
         )
 
     @property
@@ -92,10 +88,10 @@ class WysiwygWidget(AdminTextareaWidget):
         defaults = {"rows": 4}
         if attrs:
             defaults.update(attrs)
-        super(WysiwygWidget, self).__init__(attrs)
+        super().__init__(attrs)
 
     def render(self, name, value, attrs=None, renderer=None):
-        value = smart_text(value or u"")
+        value = smart_str(value or "")
         final_attrs = self.build_attrs(attrs)  # signature changed in Django 1.11
         final_attrs["name"] = name
 
@@ -104,6 +100,4 @@ class WysiwygWidget(AdminTextareaWidget):
         else:
             final_attrs["class"] = "cp-wysiwyg-widget"
 
-        return mark_safe(
-            u"<textarea{0}>{1}</textarea>".format(flatatt(final_attrs), escape(value))
-        )
+        return mark_safe(f"<textarea{flatatt(final_attrs)}>{escape(value)}</textarea>")
