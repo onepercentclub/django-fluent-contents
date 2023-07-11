@@ -44,6 +44,8 @@ setup(
         "django-polymorphic>=2.1.2",
         "django-tag-parser>=3.2",
         "django-template-analyzer>=1.6.2",
+        "future>=0.12.2",
+        'django-nested-inline>=0.3.7',
         "html5lib >= 1.1",
     ],
     requires=["Django (>=2.2)"],
