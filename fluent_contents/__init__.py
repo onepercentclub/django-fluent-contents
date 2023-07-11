@@ -1,2 +1,2 @@
 # following PEP 440
-__version__ = "3.0.999"
+__version__ = "3.0"
